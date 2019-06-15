@@ -5,29 +5,56 @@
       fill: steelblue;
    } */
    .cell:hover {
-      fill: yellow !important;
+      fill-opacity: 0.5;
+   }
+
+   div.tooltip {
+      position: absolute;
+      text-align: center;
+      width: 90px;
+      /* height: 50px; */
+      padding: 2px;
+      font: 16px Arial;
+      background: ghostwhite;
+      border: 0px;
+      pointer-events: none;
+      padding: 5px;
    }
    </style>
 
 <body>
-   <title>A heatmap</title>
-   <h1 id="title">A heatmap of true facts</h1>
-   <p id="description">True facts are things that are real.</p>
+   <header>
+      <title>A heatmap</title>
+      <h1 id="title">A heatmap of true facts</h1>
+      <p id="description">True facts are things that are real.</p>
+   </header>
+   <div id="legend">
+   </div>
 
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="//d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
+<script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
 <script>
 const parseMonth = d3.timeParse("%m");
 const parseYear = d3.timeParse("%Y");
+const formatData = (data, baseTemperature) => {
+   data = data.monthlyVariance;
+   data.forEach(function(d) {
+      d.intYear = d.year;
+      d.intMonth = d.month - 1;
+      d.year = parseYear(d.year);
+      d.month = parseMonth(d.month);
+      d.temperature = baseTemperature + d.variance;
+   });
 
-const margin = {top: 20, right: 20, bottom: 30, left: 40};
+   return data
+}
+const margin = {top: 20, right: 20, bottom: 30, left: 60};
 const width = 960 - margin.left - margin.right;
 const height = 500 - margin.top - margin.bottom;
 
-let xScale = d3.scaleBand()
-          .range([0, width]);
-let yScale = d3.scaleLinear()
-          .range([height, 0]);
+let xScale = d3.scaleBand().range([0, width]);
+let yScale = d3.scaleBand().range([height, 0]);
 let colorScale = d3.scaleSequential(d3.interpolateInferno);
 
 var svg = d3.select("body").append("svg")
@@ -37,48 +64,55 @@ var svg = d3.select("body").append("svg")
     .attr("transform",  // moves the 'group' element to the top left margin
           "translate(" + margin.left + "," + margin.top + ")");
 
+var div = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .attr("id", "tooltip")
+    .style("opacity", 0);
+
 d3.json("data.json", function(error, data) {
    if (error) throw error;
 
    const baseTemperature = data.baseTemperature;
-   data = data.monthlyVariance;
-   data.forEach(function(d) {
-      d.year = parseYear(d.year);
-      // d.month = parseMonth(d.month);
-      d.temperature = baseTemperature + d.variance;
-   });
+   data = formatData(data, baseTemperature);
    console.table(data);
 
-  // Scale the range of the data in the domains
-  xScale.domain(data.map(d => d.year));
-  //   xScale.domain(d3.extent(data, function(d) { return d.year; }));
-
-  yScale.domain([
-     0,
-     d3.max(data, d => d.month)
+   xScale.domain(data.map(d => d.year));
+   yScale.domain(data.map(d => d.month));
+   colorScale.domain([
+      d3.min(data, d => d.temperature), d3.max(data, d => d.temperature)
    ]);
 
-  colorScale.domain([
-     d3.min(data, d => d.variance),
-     d3.max(data, d => d.variance)
-   ]);
-
-
-  // append the rectangles for the bar chart
-  svg.selectAll("cell")
+   // append the rectangles for the bar chart
+   svg.selectAll("cell")
       .data(data)
     .enter().append("rect")
       .attr("class", "cell")
-      .attr("data-month",  d => d.month)  // todo
-      .attr("data-year", d => d.year)  // todo
+      .attr("data-month",  d => d.intMonth)
+      .attr("data-year", d => d.intYear)
       .attr("data-temp", d => d.temperature)
       .attr("x", d => xScale(d.year))
       .attr("width", xScale.bandwidth())
       .attr("y", d => yScale(d.month))
-      .attr("height", d => height / 12)  // TODO max(d.month);
-      .style("fill", d => colorScale(d.variance));
+      .attr("height", yScale.bandwidth()) // d => height / 12)  // TODO max(d.month);
+      .style("fill", d => colorScale(d.temperature))
+      .on("mouseover", function(d) {
+       div.transition()
+         .duration(200)
+         .style("opacity", .9);
 
-  svg.append("g")
+       div.html(`Year: ${d.intYear} <br/>
+                 Temp: ${Math.round(d.temperature * 100) / 100}`)
+         .attr("data-year", d.intYear)
+         .style("left", (d3.event.pageX + 5) + "px")
+         .style("top", (d3.event.pageY - 48) + "px");
+       })
+     .on("mouseout", function(d) {
+       div.transition()
+         .duration(500)
+         .style("opacity", 0);
+       });
+
+   svg.append("g")
       .attr("transform", "translate(0," + height + ")")  // moves axis to bottom
       // .call(d3.axisBottom(xScale).ticks(10)); // .tickFormat(d3.timeFormat("%Y")));
       .attr("id", "x-axis")
@@ -86,10 +120,46 @@ d3.json("data.json", function(error, data) {
               .tickFormat(d3.timeFormat("%Y"))  // .ticks(d3.timeYear.every(10))
               .tickValues(xScale.domain().filter((d,i) => !(i%10))));  // todo
 
-  svg.append("g")
+   svg.append("g")
       .attr("id", "y-axis")
       .call(d3.axisLeft(yScale)  // .ticks(d3.timeMonth, 1)
-              .tickFormat(d3.timeFormat('%b')));
+              .tickFormat(d3.timeFormat('%B')));
+
+
+   /**
+    * Make a legend
+    */
+   const temperatureData = data.map(x => x.temperature)
+                               .sort(function(a, b) {
+                                  return a - b;
+                               });
+
+   const quantiles = [
+      d3.quantile(temperatureData, 0),
+      d3.quantile(temperatureData, .015),
+      d3.quantile(temperatureData, .15),
+      d3.quantile(temperatureData, .5),
+      d3.quantile(temperatureData, .97),
+      d3.quantile(temperatureData, .997),
+      d3.quantile(temperatureData, 1),
+]
+   console.table(quantiles);
+
+   var legend = d3.select("#legend").append("svg")
+    .attr("width", width)
+    .attr("height", 60)
+   .append("g")  // append a 'group' element to the svg
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+   legend.selectAll("legend")
+      .data(quantiles)
+    .enter().append("rect")
+      .attr("class", "legend")
+      .attr("x", (d, i) => i * (3 + 50))
+      .attr("width", 50)
+      .attr("y", 0)
+      .attr("height", 40)
+      .style("fill", d => colorScale(d));
 });
 
 </script>
