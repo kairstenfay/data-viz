@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <style>
-   /* .cell {
-      fill: steelblue;
-   } */
    .cell:hover {
       fill-opacity: 0.5;
    }
@@ -12,11 +9,10 @@
       position: absolute;
       text-align: center;
       width: 90px;
-      /* height: 50px; */
       padding: 2px;
       font: 16px Arial;
       background: ghostwhite;
-      border: 0px;
+      border: 1px solid black;
       pointer-events: none;
       padding: 5px;
    }
@@ -37,6 +33,7 @@
 <script>
 const parseMonth = d3.timeParse("%m");
 const parseYear = d3.timeParse("%Y");
+
 const formatData = (data, baseTemperature) => {
    data = data.monthlyVariance;
    data.forEach(function(d) {
@@ -49,40 +46,64 @@ const formatData = (data, baseTemperature) => {
 
    return data
 }
-const margin = {top: 20, right: 20, bottom: 30, left: 60};
-const width = 960 - margin.left - margin.right;
-const height = 500 - margin.top - margin.bottom;
 
-let xScale = d3.scaleBand().range([0, width]);
-let yScale = d3.scaleBand().range([height, 0]);
-let colorScale = d3.scaleSequential(d3.interpolateInferno);
+const createScales = (data, scales) => {
+   scales.xScale = scales.xScale.domain(data.map(d => d.year));
+   scales.yScale = scales.yScale.domain(data.map(d => d.month));
+   scales.colorScale = scales.colorScale.domain([
+                           d3.min(data, d => d.temperature),
+                           d3.max(data, d => d.temperature)
+      ]);
+   return scales;
+}
 
-var svg = d3.select("body").append("svg")
+/**
+ * Creates the svg elements for the heatmap data.
+ */
+const renderSVG = (width, height, margin) => {
+   return d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
    .append("g")  // append a 'group' element to the svg
     .attr("transform",  // moves the 'group' element to the top left margin
           "translate(" + margin.left + "," + margin.top + ")");
+}
 
-var div = d3.select("body").append("div")
+/**
+ * Creates the div element for the tooltip.
+ */
+const renderDiv = () => {
+   return d3.select("body").append("div")
     .attr("class", "tooltip")
     .attr("id", "tooltip")
     .style("opacity", 0);
+}
 
-d3.json("data.json", function(error, data) {
-   if (error) throw error;
+/**
+ * Transitions the tooltip into view.
+ */
+const divTransitionIn = () => {
+   div.transition().duration(200)
+         .style("opacity", .9);
+}
 
-   const baseTemperature = data.baseTemperature;
-   data = formatData(data, baseTemperature);
-   console.table(data);
+const divHTML = (d) => {
+   div.html(`Year: ${d.intYear} <br/>
+                 Temp: ${Math.round(d.temperature * 100) / 100}`)
+         .attr("data-year", d.intYear)
+         .style("left", (d3.event.pageX + 5) + "px")
+         .style("top", (d3.event.pageY - 48) + "px");
+}
 
-   xScale.domain(data.map(d => d.year));
-   yScale.domain(data.map(d => d.month));
-   colorScale.domain([
-      d3.min(data, d => d.temperature), d3.max(data, d => d.temperature)
-   ]);
+/**
+ * Transitions the tooltip out of view.
+ */
+const divTransitionOut = () => {
+   div.transition().duration(500)
+         .style("opacity", 0);
+}
 
-   // append the rectangles for the bar chart
+const addData = (data, scales) => {
    svg.selectAll("cell")
       .data(data)
     .enter().append("rect")
@@ -90,49 +111,50 @@ d3.json("data.json", function(error, data) {
       .attr("data-month",  d => d.intMonth)
       .attr("data-year", d => d.intYear)
       .attr("data-temp", d => d.temperature)
-      .attr("x", d => xScale(d.year))
-      .attr("width", xScale.bandwidth())
-      .attr("y", d => yScale(d.month))
-      .attr("height", yScale.bandwidth()) // d => height / 12)  // TODO max(d.month);
-      .style("fill", d => colorScale(d.temperature))
+      .attr("x", d => scales.xScale(d.year))
+      .attr("width", scales.xScale.bandwidth())
+      .attr("y", d => scales.yScale(d.month))
+      .attr("height", scales.yScale.bandwidth())
+      .style("fill", d => scales.colorScale(d.temperature))
       .on("mouseover", function(d) {
-       div.transition()
-         .duration(200)
-         .style("opacity", .9);
-
-       div.html(`Year: ${d.intYear} <br/>
-                 Temp: ${Math.round(d.temperature * 100) / 100}`)
-         .attr("data-year", d.intYear)
-         .style("left", (d3.event.pageX + 5) + "px")
-         .style("top", (d3.event.pageY - 48) + "px");
+         divTransitionIn();
+         divHTML(d);
        })
      .on("mouseout", function(d) {
-       div.transition()
-         .duration(500)
-         .style("opacity", 0);
+         divTransitionOut();
        });
+}
 
+/**
+ * Renders x axis and moves it to bottom
+ */
+const appendXAxis = (height, xScale) => {
    svg.append("g")
-      .attr("transform", "translate(0," + height + ")")  // moves axis to bottom
-      // .call(d3.axisBottom(xScale).ticks(10)); // .tickFormat(d3.timeFormat("%Y")));
+      .attr("transform", "translate(0," + height + ")")
       .attr("id", "x-axis")
       .call(d3.axisBottom(xScale)
               .tickFormat(d3.timeFormat("%Y"))  // .ticks(d3.timeYear.every(10))
               .tickValues(xScale.domain().filter((d,i) => !(i%10))));  // todo
+}
 
+const appendYAxis = (yScale) => {
    svg.append("g")
       .attr("id", "y-axis")
-      .call(d3.axisLeft(yScale)  // .ticks(d3.timeMonth, 1)
+      .call(d3.axisLeft(yScale)
               .tickFormat(d3.timeFormat('%B')));
+}
 
+const appendLegend = (width, margin) => {
+   return d3.select("#legend").append("svg")
+    .attr("width", width)
+    .attr("height", 60)
+   .append("g")  // append a 'group' element to the svg
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+}
 
-   /**
-    * Make a legend
-    */
+const createLegend = (data, colorScale) => {
    const temperatureData = data.map(x => x.temperature)
-                               .sort(function(a, b) {
-                                  return a - b;
-                               });
+                               .sort((a, b) => a - b);
 
    const quantiles = [
       d3.quantile(temperatureData, 0),
@@ -143,13 +165,8 @@ d3.json("data.json", function(error, data) {
       d3.quantile(temperatureData, .997),
       d3.quantile(temperatureData, 1),
 ]
-   console.table(quantiles);
 
-   var legend = d3.select("#legend").append("svg")
-    .attr("width", width)
-    .attr("height", 60)
-   .append("g")  // append a 'group' element to the svg
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+   let legend = appendLegend(width, margin);
 
    legend.selectAll("legend")
       .data(quantiles)
@@ -160,6 +177,34 @@ d3.json("data.json", function(error, data) {
       .attr("y", 0)
       .attr("height", 40)
       .style("fill", d => colorScale(d));
+
+      return legend;
+}
+
+const margin = {top: 20, right: 20, bottom: 30, left: 60};
+const width = 960 - margin.left - margin.right;
+const height = 500 - margin.top - margin.bottom;
+
+let scales = {
+   xScale: d3.scaleBand().range([0, width]),
+   yScale: d3.scaleBand().range([height, 0]),
+   colorScale: d3.scaleSequential(d3.interpolateInferno),
+}
+
+var svg = renderSVG(width, height, margin);
+
+let div = renderDiv();
+
+d3.json("data.json", function(error, data) {
+   if (error) throw error;
+
+   const baseTemperature = data.baseTemperature;
+   data = formatData(data, baseTemperature);
+   scales = createScales(data, scales);
+   addData(data, scales);
+   appendXAxis(height, scales.xScale);
+   appendYAxis(scales.yScale);
+   createLegend(data, scales.colorScale);
 });
 
 </script>
