@@ -1,42 +1,190 @@
 <!DOCTYPE html>
+<meta charset="utf-8">
 <style>
 
-.counties :hover {
-  fill: red;
+.usa :hover {
+  /* fill: #fff !important; */
+  fill-opacity: 0.2;
+  stroke: #000;
 }
 
 .county-borders {
   fill: none;
-  stroke: #fff;
-  stroke-width: 0.5px;
+  stroke-width: 0px;
   stroke-linejoin: round;
   stroke-linecap: round;
   pointer-events: none;
 }
 
+.state-borders {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+div.tooltip {
+      position: absolute;
+      text-align: center;
+      width: 180px;
+      padding: 2px;
+      font: 14px Arial;
+      background: ghostwhite;
+      border: 1px solid black;
+      pointer-events: none;
+      padding: 5px;
+   }
+
 </style>
+<body>
+  <header>
+    <title>US % Bachelor's</title>
+    <h1 id="title">Percentage of People in the US with Bachelor's Degrees</h1>
+    <p id="description">That means they went to a 4 year college!</p>
+  </header>
+</body>
 <svg width="960" height="600"></svg>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/topojson.v2.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
 <script>
 
-var svg = d3.select("svg");
+/**
+ * Draws the US Map with counties, coloring them in based on given data
+ */
+const createMap = (us, edu_obj, path) => {
+    svg.append("g")
+      .attr("class", "usa")
+    .selectAll("path")
+    .data(topojson.feature(us, us.objects.counties).features)
+    .enter()
+      .append("path")
+      .attr("d", path)
+      .attr("class", "county")
+      .attr("data-fips", d => d.id)
+      .attr("data-education", d => edu_obj[d.id][0].bachelorsOrHigher)
+      .style("fill", d => {
+        return color(edu_obj[d.id][0].bachelorsOrHigher);
+      })
+      .on("mouseover", function(d) {
+         divTransitionIn();
+         divHTML(d, edu_obj);
+       })
+     .on("mouseout", function(d) {
+         divTransitionOut();
+       });
+}
 
+/**
+ * Draws the county borders
+ */
+const drawCountyBorders = (us) => {
+        svg.append("path")
+            .attr("class", "county-borders")
+            .attr("d", path(topojson.mesh(us, us.objects.counties,
+                                          (a, b) => a !== b )));
+}
+
+const drawStateBorders = (us) => {
+        svg.append("path")
+            .attr("class", "state-borders")
+            .attr("d", path(topojson.mesh(us, us.objects.states,
+                                          (a, b) => a !== b )));
+}
+
+/**
+ * Creates the div element for the tooltip.
+ */
+ const renderDiv = () => {
+   return d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .attr("id", "tooltip")
+    .style("opacity", 0);
+}
+
+/**
+ * Transitions the tooltip into view.
+ */
+ const divTransitionIn = () => {
+   div.transition().duration(200)
+         .style("opacity", .9);
+}
+
+const divHTML = (d, edu_obj) => {
+  const inner = edu_obj[d.id][0];
+   div.html(`${inner.area_name}, ${inner.state} <br/>
+             Bachelor's rate: ${inner.bachelorsOrHigher}%`)
+         .attr("data-education", inner.bachelorsOrHigher)
+         .style("left", (d3.event.pageX + 5) + "px")
+         .style("top", (d3.event.pageY - 40) + "px");
+}
+
+/**
+ * Transitions the tooltip out of view.
+ */
+ const divTransitionOut = () => {
+   div.transition().duration(500)
+         .style("opacity", 0);
+}
+
+const createLegend = (colorScale, height=600, width=400, barHeight=20) => {
+
+  const margin = { left: 500, right: 10, top: 10, bottom: 20}
+
+  var legend = svg.selectAll(".legend")
+      .data(colorScale.ticks(6).slice(1))
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("id", "legend")
+      .attr("transform", (d, i) => `translate(${20 + margin.left + i * 20},${20})`);
+
+  legend.append("rect")
+      .attr("width", 20)
+      .attr("height", 20)
+      .style("fill", colorScale);
+
+  legend.append("text")
+      .attr("x", 16)
+      .attr("y", 30)
+      .attr("dy", ".35em")
+      .text(String);
+
+  svg.append("text")
+      .attr("class", "label")
+      .attr("x", margin.left + 20)
+      .attr("y", 10)
+      .attr("dy", ".35em")
+      .text("% Bachelor's");
+}
+
+var svg = d3.select("svg");
 var path = d3.geoPath();
+let div = renderDiv();
+
+// const color = d3.scaleQuantize([1, 10], d3.schemeBlues[9]);
+const color = d3.scaleSequential(d3.interpolateYlGnBu).domain([0, 70])
+
 
 d3.json("https://d3js.org/us-10m.v1.json", function(error, us) {
   if (error) throw error;
 
-  svg.append("g")
-      .attr("class", "counties")
-    .selectAll("path")
-    .data(topojson.feature(us, us.objects.counties).features)
-    .enter().append("path")
-      .attr("d", path);
+    d3.json("https://raw.githubusercontent.com/no-stack-dub-sack/testable-projects-fcc/master/src/data/choropleth_map/for_user_education.json", function(error, data) {
+        if (error) throw error;
+        const geo = us.objects.counties.geometries;
 
-  svg.append("path")
-      .attr("class", "county-borders")
-      .attr("d", path(topojson.mesh(us, us.objects.counties, function(a, b) { return a !== b; })));
+        const edu_obj = {};
+        for (let i = 0; i < geo.length; i++) {
+          edu_obj[geo[i].id] = data.filter(d => d.fips == geo[i].id)
+        }
+
+      createMap(us, edu_obj, path);
+      drawCountyBorders(us);
+      drawStateBorders(us);
+      createLegend(color);
+  })
 });
 
 </script>
