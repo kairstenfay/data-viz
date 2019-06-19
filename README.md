@@ -13,3 +13,6 @@
 ### r/DataIsBeautiful
 * [r/travel data battle (python)](https://github.com/kairstenfay/data-viz/blob/master/r-travel-data-battle.ipynb)
 
+
+### TidyTuesday
+* [Christmas bird counts](https://kairstenfay.github.io/data-viz/tidy-tuesdays/christmas-bird-counts/)

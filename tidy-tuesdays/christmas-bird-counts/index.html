@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<body>
+    <header>
+        <title>Christmas Bird Counts</title>
+        <h1>Christmas Bird Counts for the American Crow</h1>
+        <h2>Hamilton, Ontario</h2>
+    </header>
+</body>
+
+<style>
+    .bar {
+        fill: grey;
+    }
+
+    .bar:hover {
+        fill: black;
+    }
+</style>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+    // set the dimensions and margins of the graph
+    const margin = {top: 20, right: 20, bottom: 30, left: 40},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    // set the ranges
+    let x = d3.scaleTime().range([0, width]);
+    let y = d3.scaleLinear().range([height, 0]);
+
+    // append the svg object to the body of the page
+    // append a 'group' element to 'svg'
+    // moves the 'group' element to the top left margin
+    let svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // get the data
+    d3.csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-18/bird_counts.csv",
+    function(error, data) {
+      if (error) throw error;
+
+        data = data.filter(d => d.species == 'American Crow');
+        for (let i = 0; i < data.length; i++) {
+            data[i].year = new Date(data[i].year);
+            data[i].how_many_counted = Number(data[i].how_many_counted);
+        }
+
+      // Scale the range of the data in the domains
+      x.domain([d3.min(data, d => d.year), d3.max(data, d => d.year)]);
+      y.domain([0, d3.max(data, d => d.how_many_counted)]);
+
+      // append the rectangles for the bar char
+      svg.selectAll(".bar")
+          .data(data)
+        .enter().append("rect")
+          .attr("class", "bar")
+          .attr("data-year", d => d.year)
+          .attr("data-count", d => d.how_many_counted)
+          .attr("width", 10) // x.bandwidth())
+          .attr("x", d => x(d.year))
+          .attr("y", d => y(d.how_many_counted))
+          .attr("height", d => height - y(d.how_many_counted));
+
+      // add the x Axis
+      svg.append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x));
+
+      // add the y Axis
+      svg.append("g")
+          .call(d3.axisLeft(y));
+
+    });
+</script>
