@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+    <header>
+        <title>Kickstarter Pledges</title>
+        <h1 id="title">Kickstarter pledges</h1>
+        <h2 id="description">What has been funded</h2>
+        <div id="legend"></div>
+    </header>
+    <body>
+    </body>
+
+    <style>
+
+    form {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    svg {
+      font: 10px sans-serif;
+    }
+
+    #legend {
+      margin-bottom: -25px;
+    }
+    
+    #legend svg {
+      width: 100%;
+    }
+
+    div.tooltip {
+      position: absolute;
+      text-align: center;
+      width: 250px;
+      padding: 2px;
+      font: 16px Arial;
+      background: ghostwhite;
+      border: 1px solid black;
+      pointer-events: none;
+      padding: 5px;
+   }
+    </style>
+    <svg width="960" height="570"></svg>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+    <script>
+
+    var svg = d3.select("svg"),
+        width = +svg.attr("width"),
+        height = +svg.attr("height");
+
+    var fader = (color) => d3.interpolateRgb(color, "#fff")(0.2);
+        const color = d3.scaleOrdinal(d3.schemeCategory20.map(fader));
+        const format = d3.format(",d");
+
+    var treemap = d3.treemap()
+        .tile(d3.treemapResquarify)
+        .size([width, height])
+        .paddingInner(1);
+
+
+    const createLegend = (colorScale, categories) => {
+      const boxWidth = 80;
+      const boxHeight = 30;
+      const boxPadding = 5;
+
+      let legend = d3.select("#legend")
+        .append("svg")
+          .attr("transform", (d, i) => `translate(${0},${0})`);
+
+      legend.selectAll("legend")
+        .data(categories)
+      .enter().append("rect")
+        .attr("data-value", d => console.log(d))
+        .attr("class", "legend-item")
+        .attr("x", (d, i) => i * (boxPadding + boxWidth) - (Math.floor(i/10) * boxWidth * 10))
+        .attr("width", boxWidth)
+        .attr("y", (d, i) => Math.floor(i/10) * 40)
+        .attr("height", boxHeight)
+        .style("fill", d => colorScale(d));
+
+      legend.selectAll("text")
+        .data(categories).enter()
+        .append("text")
+          .text(d => d)
+          .attr("x", (d, i) => i * (boxPadding + boxWidth) - (Math.floor(i/10) * boxWidth * 10))
+          .attr("y", (d, i) => Math.floor(i/10) * 40 + boxPadding)
+          .attr("dy", ".35em");
+          // .text(String);
+
+      // legend.append("text")
+      //     .attr("class", "label")
+      //     .attr("x", 20)
+      //     .attr("y", 10)
+      //     .attr("dy", ".35em")
+      //     .text("% Bachelor's");
+      }
+    /**
+     * Creates the div element for the tooltip.
+     */
+    const renderTip = () => {
+      return d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .attr("id", "tooltip")
+        .style("opacity", 0);
+    }
+
+    /**
+     * Transitions the tooltip into view.
+     */
+    const tipTransitionIn = () => {
+      tip.transition().duration(200)
+            .style("opacity", .9);
+    }
+
+    const tipHTML = (d) => {
+      tip.html(`${d.data.category}
+                <hr>
+                ${d.data.name}<br/>
+                ${'Raised $' + d.value}`)
+            .attr("data-value", d.value)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY + 20) + "px");
+    }
+
+    /**
+     * Transitions the tooltip out of view.
+     */
+    const tipTransitionOut = () => {
+      tip.transition().duration(500)
+            .style("opacity", 0);
+    }
+
+    let tip = renderTip();
+
+    d3.json("https://cdn.rawgit.com/freeCodeCamp/testable-projects-fcc/a80ce8f9/src/data/tree_map/kickstarter-funding-data.json",
+    function(error, data) {
+      if (error) throw error;
+
+      let categories = data.children.map(d => d.name);
+
+      var root = d3.hierarchy(data)
+          .eachBefore(d => d.data.id = (d.parent ? d.parent.data.id + "." : "") + d.data.name)
+          .sum(sumByvalue)
+          .sort((a, b) => b.height - a.height || b.value - a.value);
+
+      treemap(root);
+
+      var cell = svg.selectAll("g")
+        .data(root.leaves())
+        .enter().append("g")
+          .attr("transform", d => "translate(" + d.x0 + "," + d.y0 + ")");
+
+      cell.append("rect")
+          .attr("id", d => d.data.id)
+          .attr("class", "tile")
+          .attr("data-name", d => d.data.name)
+          .attr("data-category", d => d.data.category)
+          .attr("data-value", d => d.value)
+          .attr("width", d => d.x1 - d.x0)
+          .attr("height", d => d.y1 - d.y0)
+          .attr("fill", d => color(d.data.category))
+          .on("mouseover", function(d) {
+            tipTransitionIn();
+            tipHTML(d);
+          })
+          .on("mouseout", function(d) {
+              tipTransitionOut();
+          });
+
+      cell.append("text")
+        .selectAll("tspan")
+          .data(d => d.data.name.split(/(?=[A-Z][^A-Z])/g)) // todo
+        .enter().append("tspan")
+          .attr("x", 4)
+          .attr("y", (d, i) => 13 + i * 10)
+          .text(d => d);
+
+      createLegend(color, categories);
+    });
+
+
+    const sumByvalue = (d) => d.value;
+
+    </script>
