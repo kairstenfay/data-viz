@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <style>
+
+   body {
+      background: #000;
+      color: #fffde5;
+      text-align: center;
+      font-family: Arial;
+   }
+
    .cell:hover {
       fill-opacity: 0.5;
    }
@@ -8,28 +16,49 @@
    div.tooltip {
       position: absolute;
       text-align: center;
-      width: 90px;
+      width: 110px;
       padding: 2px;
       font: 16px Arial;
-      background: ghostwhite;
+      background: #222;
       border: 1px solid black;
       pointer-events: none;
       padding: 5px;
    }
+
+   svg {
+      fill: #fffde5;
+   }
+
+   #x-axis, #y-axis, #x-axis path, #y-axis path, #x-axis line, #y-axis line {
+      stroke: #fffde5;
+   }
+
+   #x-axis text, #y-axis text{
+      font-family: 'Arial';
+      font-size: 12px;
+      font-weight: lighter;
+   }
+
+   #legend {
+      width: 50%;
+      margin: 0 auto;
+   }
+
+
    </style>
 
 <body>
    <header>
-      <title>A heatmap</title>
-      <h1 id="title">A heatmap of true facts</h1>
-      <p id="description">True facts are things that are real.</p>
+      <title>Global Temperatures</title>
+      <h1 id="title">Monthly Global Land-Surface Temperature</h1>
+      <p id="description">1753 - 2015: base temperature 8.66℃</p>
    </header>
    <div id="legend">
    </div>
 
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="//d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
-<script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+<!-- <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script> -->
 <script>
 const parseMonth = d3.timeParse("%m");
 const parseYear = d3.timeParse("%Y");
@@ -61,18 +90,19 @@ const createScales = (data, scales) => {
  * Creates the svg elements for the heatmap data.
  */
 const renderSVG = (width, height, margin) => {
-   return d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-   .append("g")  // append a 'group' element to the svg
-    .attr("transform",  // moves the 'group' element to the top left margin
-          "translate(" + margin.left + "," + margin.top + ")");
+   return d3.select("body")
+      .append("svg")
+         .attr("width", width + margin.left + margin.right)
+         .attr("height", height + margin.top + margin.bottom)
+      .append("g")  // append a 'group' element to the svg
+         .attr("transform",
+               "translate(" + margin.left + "," + margin.top + ")");
 }
 
 /**
  * Creates the div element for the tooltip.
  */
-const renderDiv = () => {
+const renderTip = () => {
    return d3.select("body").append("div")
     .attr("class", "tooltip")
     .attr("id", "tooltip")
@@ -82,31 +112,31 @@ const renderDiv = () => {
 /**
  * Transitions the tooltip into view.
  */
-const divTransitionIn = () => {
-   div.transition().duration(200)
+const tipTransitionIn = () => {
+   tip.transition().duration(200)
          .style("opacity", .9);
 }
 
 const divHTML = (d) => {
-   div.html(`Year: ${d.intYear} <br/>
-                 Temp: ${Math.round(d.temperature * 100) / 100}`)
-         .attr("data-year", d.intYear)
-         .style("left", (d3.event.pageX + 5) + "px")
-         .style("top", (d3.event.pageY - 48) + "px");
+   tip.html(`Year: ${d.intYear} <br/>
+             Temp: ${Math.round(d.temperature * 100) / 100}℃`)
+      .attr("data-year", d.intYear)
+      .style("left", (d3.event.pageX + 5) + "px")
+      .style("top", (d3.event.pageY - 48) + "px");
 }
 
 /**
  * Transitions the tooltip out of view.
  */
-const divTransitionOut = () => {
-   div.transition().duration(500)
+const tipTransitionOut = () => {
+   tip.transition().duration(500)
          .style("opacity", 0);
 }
 
 const addData = (data, scales) => {
    svg.selectAll("cell")
-      .data(data)
-    .enter().append("rect")
+      .data(data).enter()
+      .append("rect")
       .attr("class", "cell")
       .attr("data-month",  d => d.intMonth)
       .attr("data-year", d => d.intYear)
@@ -117,11 +147,11 @@ const addData = (data, scales) => {
       .attr("height", scales.yScale.bandwidth())
       .style("fill", d => scales.colorScale(d.temperature))
       .on("mouseover", function(d) {
-         divTransitionIn();
+         tipTransitionIn();
          divHTML(d);
        })
      .on("mouseout", function(d) {
-         divTransitionOut();
+         tipTransitionOut();
        });
 }
 
@@ -133,8 +163,8 @@ const appendXAxis = (height, xScale) => {
       .attr("transform", "translate(0," + height + ")")
       .attr("id", "x-axis")
       .call(d3.axisBottom(xScale)
-              .tickFormat(d3.timeFormat("%Y"))  // .ticks(d3.timeYear.every(10))
-              .tickValues(xScale.domain().filter((d,i) => !(i%10))));  // todo
+              .tickFormat(d3.timeFormat("%Y"))
+              .tickValues(xScale.domain().filter((d,i) => !((i + 3) % 10))));
 }
 
 const appendYAxis = (yScale) => {
@@ -144,44 +174,47 @@ const appendYAxis = (yScale) => {
               .tickFormat(d3.timeFormat('%B')));
 }
 
-const appendLegend = (width, margin) => {
-   return d3.select("#legend").append("svg")
-    .attr("width", width)
+const appendLegend = (margin) => {
+   return d3.select("#legend")
+   .append("svg")
+    .attr("width", 200)
     .attr("height", 60)
-   .append("g")  // append a 'group' element to the svg
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+   .append("g")
+    .attr("transform", "translate(0," + margin.top + ")");
 }
 
-const createLegend = (data, colorScale) => {
-   const temperatureData = data.map(x => x.temperature)
-                               .sort((a, b) => a - b);
+const createLegend = (data, colorScale, barWidth=2) => {
+   let tempData = data.map(x => Math.round(x.temperature * 10) / 10)
+                               .sort((a, b) => a - b)
+                               .filter((v, i, a) => a.indexOf(v) === i);
 
-   const quantiles = [
-      d3.quantile(temperatureData, 0),
-      d3.quantile(temperatureData, .015),
-      d3.quantile(temperatureData, .15),
-      d3.quantile(temperatureData, .5),
-      d3.quantile(temperatureData, .97),
-      d3.quantile(temperatureData, .997),
-      d3.quantile(temperatureData, 1),
-]
-
-   let legend = appendLegend(width, margin);
+   let legend = appendLegend(margin);
 
    legend.selectAll("legend")
-      .data(quantiles)
-    .enter().append("rect")
+      .data(tempData).enter()
+   .append("rect")
       .attr("class", "legend")
-      .attr("x", (d, i) => i * (3 + 50))
-      .attr("width", 50)
+      .attr("x", (d, i) => i * barWidth)
+      .attr("width", barWidth)
       .attr("y", 0)
-      .attr("height", 40)
+      .attr("height", 30)
       .style("fill", d => colorScale(d));
+
+   legend.selectAll("text")
+      .data([tempData[0], tempData[tempData.length - 1]]).enter()
+      .append("text")
+         .text((d) => d + "℃")
+         .attr("x", (d, i) => {
+            const diff = (i === 0) ? 0 : 40;
+            return i * tempData.length * barWidth - diff;
+         })
+         .attr("y", (d, i) => -10)
+         .attr("dy", ".35em");
 
       return legend;
 }
 
-const margin = {top: 20, right: 20, bottom: 30, left: 60};
+const margin = {top: 20, right: 20, bottom: 30, left: 80};
 const width = 960 - margin.left - margin.right;
 const height = 500 - margin.top - margin.bottom;
 
@@ -191,9 +224,8 @@ let scales = {
    colorScale: d3.scaleSequential(d3.interpolateInferno),
 }
 
-var svg = renderSVG(width, height, margin);
-
-let div = renderDiv();
+let svg = renderSVG(width, height, margin);
+let tip = renderTip();
 
 d3.json("data.json", function(error, data) {
    if (error) throw error;
