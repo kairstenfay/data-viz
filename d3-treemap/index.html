@@ -1,20 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-    <header>
-        <title>Kickstarter Pledges</title>
-        <h1 id="title">Kickstarter pledges</h1>
-        <h2 id="description">What has been funded</h2>
-        <div id="legend"></div>
-    </header>
-    <body>
-    </body>
-
-    <style>
-
-    form {
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    }
-
+  <style>
     svg {
       font: 10px sans-serif;
     }
@@ -22,7 +8,7 @@
     #legend {
       margin-bottom: -25px;
     }
-    
+
     #legend svg {
       width: 100%;
     }
@@ -37,11 +23,31 @@
       border: 1px solid black;
       pointer-events: none;
       padding: 5px;
-   }
+    }
+
+    body {
+      background: #eef;
+      width: 80%;
+      margin: 0 auto;
+      font-family: Verdana, sans-serif;
+      text-align: center;
+    }
     </style>
+
+    <header>
+        <title>Kickstarter Pledges</title>
+        <h1 id="title">Kickstarter Pledges</h1>
+        <p id="description">
+          Top 100 Most Pledged Kickstarter Campaigns Grouped By Category
+        </p>
+        <div id="legend"></div>
+    </header>
+    <body>
+    </body>
     <svg width="960" height="570"></svg>
+
     <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+    <!-- <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script> -->
     <script>
 
     var svg = d3.select("svg"),
@@ -59,41 +65,34 @@
 
 
     const createLegend = (colorScale, categories) => {
-      const boxWidth = 80;
-      const boxHeight = 30;
-      const boxPadding = 5;
+      const boxWidth = 20;
+      const boxHeight = 20;
+      const horizontalBoxPadding = 90;
+      const numPerRow = 4;
 
       let legend = d3.select("#legend")
         .append("svg")
           .attr("transform", (d, i) => `translate(${0},${0})`);
 
       legend.selectAll("legend")
-        .data(categories)
-      .enter().append("rect")
-        .attr("data-value", d => console.log(d))
-        .attr("class", "legend-item")
-        .attr("x", (d, i) => i * (boxPadding + boxWidth) - (Math.floor(i/10) * boxWidth * 10))
-        .attr("width", boxWidth)
-        .attr("y", (d, i) => Math.floor(i/10) * 40)
-        .attr("height", boxHeight)
-        .style("fill", d => colorScale(d));
+        .data(categories).enter()
+        .append("rect")
+          .attr("class", "legend-item")
+          .attr("x", (d, i) => (i % numPerRow) * (horizontalBoxPadding + boxWidth))
+          .attr("y", (d, i) => Math.floor(i/numPerRow) * boxHeight)
+          .attr("height", boxHeight)
+          .attr("width", boxWidth)
+          .style("fill", d => colorScale(d));
 
       legend.selectAll("text")
         .data(categories).enter()
         .append("text")
           .text(d => d)
-          .attr("x", (d, i) => i * (boxPadding + boxWidth) - (Math.floor(i/10) * boxWidth * 10))
-          .attr("y", (d, i) => Math.floor(i/10) * 40 + boxPadding)
+          .attr("x", (d, i) => (i % numPerRow) * (horizontalBoxPadding + boxWidth) + boxWidth)
+          .attr("y", (d, i) => Math.floor(i/numPerRow) * boxHeight + boxWidth/2)
           .attr("dy", ".35em");
-          // .text(String);
-
-      // legend.append("text")
-      //     .attr("class", "label")
-      //     .attr("x", 20)
-      //     .attr("y", 10)
-      //     .attr("dy", ".35em")
-      //     .text("% Bachelor's");
       }
+
     /**
      * Creates the div element for the tooltip.
      */
@@ -116,7 +115,7 @@
       tip.html(`${d.data.category}
                 <hr>
                 ${d.data.name}<br/>
-                ${'Raised $' + d.value}`)
+                ${'Raised $' + d.value.toLocaleString()}`)
             .attr("data-value", d.value)
             .style("left", (d3.event.pageX) + "px")
             .style("top", (d3.event.pageY + 20) + "px");
@@ -139,7 +138,6 @@
       let categories = data.children.map(d => d.name);
 
       var root = d3.hierarchy(data)
-          .eachBefore(d => d.data.id = (d.parent ? d.parent.data.id + "." : "") + d.data.name)
           .sum(sumByvalue)
           .sort((a, b) => b.height - a.height || b.value - a.value);
 
@@ -169,7 +167,7 @@
 
       cell.append("text")
         .selectAll("tspan")
-          .data(d => d.data.name.split(/(?=[A-Z][^A-Z])/g)) // todo
+          .data(d => d.data.name.split(/(?=\s[\w][^\d])/g))
         .enter().append("tspan")
           .attr("x", 4)
           .attr("y", (d, i) => 13 + i * 10)
