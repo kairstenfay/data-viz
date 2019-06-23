@@ -3,9 +3,8 @@
 <style>
 
 .usa :hover {
-  /* fill: #fff !important; */
-  fill-opacity: 0.2;
-  stroke: #000;
+  stroke: #fff;
+  stroke-width: 2px;
 }
 
 .county-borders {
@@ -13,7 +12,6 @@
   stroke-width: 0px;
   stroke-linejoin: round;
   stroke-linecap: round;
-  pointer-events: none;
 }
 
 .state-borders {
@@ -22,7 +20,14 @@
   stroke-width: 1.5px;
   stroke-linejoin: round;
   stroke-linecap: round;
-  pointer-events: none;
+}
+
+.country-borders {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 div.tooltip {
@@ -33,29 +38,38 @@ div.tooltip {
       font: 14px Arial;
       background: ghostwhite;
       border: 1px solid black;
-      pointer-events: none;
       padding: 5px;
    }
+
+  body {
+    background: #eef;
+    width: 80%;
+    margin: 0 auto;
+    text-align: center;
+    font-family: 'Trebuchet MS', sans-serif;
+  }
 
 </style>
 <body>
   <header>
     <title>US % Bachelor's</title>
-    <h1 id="title">Percentage of People in the US with Bachelor's Degrees</h1>
-    <p id="description">That means they went to a 4 year college!</p>
+    <h1 id="title">United States Bachelor's Degree Attainment</h1>
+    <p id="description">
+      Percentage of adults age 25 and older with a bachelor's degree or higher
+      (2010-2014)</p>
   </header>
 </body>
-<svg width="960" height="600"></svg>
+
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/topojson.v2.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-<script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+<!-- <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script> -->
 <script>
 
 /**
  * Draws the US Map with counties, coloring them in based on given data
  */
-const createMap = (us, edu_obj, path) => {
+const createMap = (us, edu, path) => {
     svg.append("g")
       .attr("class", "usa")
     .selectAll("path")
@@ -65,17 +79,15 @@ const createMap = (us, edu_obj, path) => {
       .attr("d", path)
       .attr("class", "county")
       .attr("data-fips", d => d.id)
-      .attr("data-education", d => edu_obj[d.id][0].bachelorsOrHigher)
+      .attr("data-education", d => edu[d.id][0].bachelorsOrHigher)
       .style("fill", d => {
-        return color(edu_obj[d.id][0].bachelorsOrHigher);
+        return color(edu[d.id][0].bachelorsOrHigher);
       })
-      .on("mouseover", function(d) {
-         divTransitionIn();
-         divHTML(d, edu_obj);
+      .on("mouseover", (d) => {
+         tipTransitionIn();
+         tipHTML(d, edu);
        })
-     .on("mouseout", function(d) {
-         divTransitionOut();
-       });
+     .on("mouseout", (d) => tipTransitionOut());
 }
 
 /**
@@ -95,10 +107,17 @@ const drawStateBorders = (us) => {
                                           (a, b) => a !== b )));
 }
 
+const drawCountryBorders = (us) => {
+        svg.append("path")
+            .attr("class", "country-borders")
+            .attr("d", path(topojson.mesh(us, us.objects.states,
+                                          (a, b) => a === b )));
+}
+
 /**
  * Creates the div element for the tooltip.
  */
- const renderDiv = () => {
+ const renderTooltip = () => {
    return d3.select("body").append("div")
     .attr("class", "tooltip")
     .attr("id", "tooltip")
@@ -108,25 +127,25 @@ const drawStateBorders = (us) => {
 /**
  * Transitions the tooltip into view.
  */
- const divTransitionIn = () => {
-   div.transition().duration(200)
+ const tipTransitionIn = () => {
+   tip.transition().duration(200)
          .style("opacity", .9);
 }
 
-const divHTML = (d, edu_obj) => {
-  const inner = edu_obj[d.id][0];
-   div.html(`${inner.area_name}, ${inner.state} <br/>
+const tipHTML = (d, edu) => {
+  const inner = edu[d.id][0];
+   tip.html(`${inner.area_name}, ${inner.state} <br/>
              Bachelor's rate: ${inner.bachelorsOrHigher}%`)
          .attr("data-education", inner.bachelorsOrHigher)
-         .style("left", (d3.event.pageX + 5) + "px")
-         .style("top", (d3.event.pageY - 40) + "px");
+         .style("left", (d3.event.pageX + 10) + "px")
+         .style("top", (d3.event.pageY - 35) + "px");
 }
 
 /**
  * Transitions the tooltip out of view.
  */
- const divTransitionOut = () => {
-   div.transition().duration(500)
+ const tipTransitionOut = () => {
+   tip.transition().duration(500)
          .style("opacity", 0);
 }
 
@@ -160,13 +179,18 @@ const createLegend = (colorScale, height=600, width=400, barHeight=20) => {
       .text("% Bachelor's");
 }
 
-var svg = d3.select("svg");
+const margin = {top: 20, right: 20, bottom: 30, left: 80};
+const width = 960 - margin.left - margin.right;
+const height = 600 - margin.top - margin.bottom;
+
+var svg = d3.select("body")
+      .append("svg")
+         .attr("width", width + margin.left + margin.right)
+         .attr("height", height + margin.top + margin.bottom)
 var path = d3.geoPath();
-let div = renderDiv();
+let tip = renderTooltip();
 
-// const color = d3.scaleQuantize([1, 10], d3.schemeBlues[9]);
 const color = d3.scaleSequential(d3.interpolateYlGnBu).domain([0, 70])
-
 
 d3.json("https://d3js.org/us-10m.v1.json", function(error, us) {
   if (error) throw error;
@@ -175,14 +199,15 @@ d3.json("https://d3js.org/us-10m.v1.json", function(error, us) {
         if (error) throw error;
         const geo = us.objects.counties.geometries;
 
-        const edu_obj = {};
+        const edu = {};
         for (let i = 0; i < geo.length; i++) {
-          edu_obj[geo[i].id] = data.filter(d => d.fips == geo[i].id)
+          edu[geo[i].id] = data.filter(d => d.fips == geo[i].id)
         }
 
-      createMap(us, edu_obj, path);
+      createMap(us, edu, path);
       drawCountyBorders(us);
       drawStateBorders(us);
+      drawCountryBorders(us);
       createLegend(color);
   })
 });
