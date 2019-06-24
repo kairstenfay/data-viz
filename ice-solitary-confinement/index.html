@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<body>
+    <header>
+        <title>ICE Solitary Confinement</title>
+        <h1 id="title">ICE Solitary Confinement</h1>
+        <p id="description">
+            <a href="https://www.icij.org/investigations/solitary-voices/about-the-solitary-voices-investigation/">
+            Source
+            </a>
+        </p>
+    </header>
+</body>
+
+<style>
+    .bar {
+        fill: grey;
+    }
+
+    .bar:hover {
+        fill: black;
+    }
+</style>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+    d3.csv("icij-solitary-voices-final-dataset-for-publication.csv",
+    function(error, data) {
+      if (error) throw error;
+
+        data.forEach((d, i) => {
+            if (i % 1000 === 0) {
+                console.log(d); // todo: debug only
+            }
+            d.placement_date = new Date(d.placement_date);
+        })
+
+        console.table(data);
+        showConfinementsByYear(data);
+    });
+
+    /**
+     *
+     */
+    const createGroupedDataScales = (groupedData, width, height) => {
+        let x = d3.scaleTime()
+                    .range([0, width])
+                    .domain(d3.extent(groupedData, d => d.key));
+        let y = d3.scaleLinear()
+                    .range([height, 0])
+                    .domain([0, d3.max(groupedData, d => d.values.length)]);
+
+        return {x, y}
+    }
+
+    /**
+     *
+     */
+    const createSVG = (width, height, margin) => {
+        return d3.select("body").append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    }
+    /**
+     *
+     */
+    const addYearlyHistogram = (svg, groupedData, x, y, barWidth, height) => {
+        svg.selectAll(".bar")
+            .data(groupedData).enter()
+            .append("rect")
+                .attr("class", "bar")
+                .attr("data-year", d => d.key)
+                .attr("data-count", d => d.values.length)
+                .attr("x", d => x(d.key))
+                .attr("y", d => y(d.values.length))
+                .attr("width", barWidth)
+                .attr("height", d => height - y(d.values.length));
+    }
+
+    /**
+     *
+     */
+    const addAxes = (svg, height, x, y, barWidth) => {
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x).tickFormat(d3.format(".0f")))
+
+        svg.append("g")
+            .call(d3.axisLeft(y));
+    }
+
+    /**
+     * Histogram of confinements per year
+     */
+    const showConfinementsByYear = (originalData) => {
+        const margin = {top: 20, right: 20, bottom: 30, left: 40},
+              width = 300 - margin.left - margin.right,
+              height = 200 - margin.top - margin.bottom;
+        const barWidth = 30;
+
+        const confinementsByYear = d3.nest()
+            .key(d => d.placement_date.getFullYear())
+            .entries(originalData);
+
+        const scales = createGroupedDataScales(confinementsByYear, width, height);
+
+        let svg = createSVG(width, height, margin);
+        addYearlyHistogram(svg, confinementsByYear, scales.x, scales.y, barWidth, height);
+        addAxes(svg, height, scales.x, scales.y);
+    }
+
+
+</script>
