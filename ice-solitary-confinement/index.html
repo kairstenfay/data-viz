@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-
+<head>
+    <link rel="stylesheet" href="styles.css">
+</head>
 <body>
     <header>
         <title>ICE Solitary Confinement</title>
@@ -13,104 +15,229 @@
     </header>
 </body>
 
-<style>
-    .bar {
-        fill: grey;
-    }
-
-    .bar:hover {
-        fill: black;
-    }
-</style>
+<!-- <svg id="numberOfConfinementsBarchart" width="300" height="300"></svg> TODO -->
+<svg id="numberOfConfinementsMap" width="960" height="600"></svg>
+<svg id="daysOfConfinementsMap" width="960" height="600"></svg>
 
 <script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.24.0/d3-legend.js"></script>
+
 <script>
-    d3.csv("icij-solitary-voices-final-dataset-for-publication.csv",
-    function(error, data) {
-      if (error) throw error;
+d3.queue()
+    .defer(d3.json, "http://enjalot.github.io/wwsd/data/world/world-110m.geojson")
+    .defer(d3.csv, "icij-solitary-voices-final-dataset-for-publication.csv")
+    .await(ready);
 
-        data.forEach((d, i) => {
-            if (i % 1000 === 0) {
-                console.log(d); // todo: debug only
-            }
-            d.placement_date = new Date(d.placement_date);
-        })
+function ready(error, topo, data) {
+    numberOfConfinementsBarChart(error, data);
+    confinementsByCitizenship(error, topo, data);
+    daysConfinementByCitizenship(error, topo, data);
+}
 
-        console.table(data);
-        showConfinementsByYear(data);
-    });
+/**
+ *
+ */
+function numberOfConfinementsBarChart(error, data) {
+    const margin = {top: 20, right: 20, bottom: 30, left: 40},
+            width = 300 - margin.left - margin.right,
+            height = 200 - margin.top - margin.bottom;
+    const barWidth = 30;
 
-    /**
-     *
-     */
-    const createGroupedDataScales = (groupedData, width, height) => {
-        let x = d3.scaleTime()
-                    .range([0, width])
-                    .domain(d3.extent(groupedData, d => d.key));
-        let y = d3.scaleLinear()
-                    .range([height, 0])
-                    .domain([0, d3.max(groupedData, d => d.values.length)]);
+    data.forEach((d, i) => {
+        if (i % 1000 === 0) {
+            console.log(d); // todo: debug only
+        }
+        d.placement_date = new Date(d.placement_date);
+    })
+    const confinementsByYear = groupDataByCountry(data, 'placement_date');
 
-        return {x, y}
+    const scales = createGroupedDataScales(confinementsByYear, width, height);
+
+    let svg = createSVG(width, height, margin);
+    addYearlyHistogram(svg, confinementsByYear, scales.x, scales.y, barWidth, height);
+    addAxes(svg, height, scales.x, scales.y);
+}
+
+function groupDataByCountry(data, secondaryVariable) {
+    let groupedData = null;
+
+    if (!secondaryVariable.toLowerCase().includes('date')) {
+        groupedData = d3.nest()
+                        .key(d => d[secondaryVariable])
+                        .entries(data);
+    }
+    else {
+        groupedData = d3.nest()
+                        .key(d => d[secondaryVariable].getFullYear())
+                        .entries(data);
+    }
+    return groupedData;
+}
+
+/**
+ *
+ */
+function createGroupedDataScales(groupedData, width, height) {
+    let x = d3.scaleTime()
+                .range([0, width])
+                .domain(d3.extent(groupedData, d => d.key));
+    let y = d3.scaleLinear()
+                .range([height, 0])
+                .domain([0, d3.max(groupedData, d => d.values.length)]);
+
+    return {x, y}
+}
+
+/**
+ *
+ */
+function createSVG(width, height, margin) {
+    return d3.select("body").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+}
+/**
+ *
+ */
+function addYearlyHistogram(svg, groupedData, x, y, barWidth, height) {
+    svg.selectAll(".bar")
+        .data(groupedData).enter()
+        .append("rect")
+            .attr("class", "bar")
+            .attr("data-year", d => d.key)
+            .attr("data-count", d => d.values.length)
+            .attr("x", d => x(d.key))
+            .attr("y", d => y(d.values.length))
+            .attr("width", barWidth)
+            .attr("height", d => height - y(d.values.length));
+}
+
+/**
+ *
+ */
+function addAxes(svg, height, x, y, barWidth) {
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).tickFormat(d3.format(".0f")))
+
+    svg.append("g")
+        .call(d3.axisLeft(y));
+}
+
+function confinementsByCitizenship(error, topo, data) {
+    if (error) throw error;
+
+    let svg = d3.select("#numberOfConfinementsMap")
+    const width = +svg.attr("width");
+    const height = +svg.attr("height");
+
+    let path = createProjection(width, height);
+    const colorScale = createBinnedColorScale(domain=[1, 6, 11, 26, 101, 1001]);
+    createBinnedLegend(svg, colorScale,
+                       labels=['0', '1-5', '6-10', '11-25',
+                                '26-100', '101-1000', '> 1000'],
+                       title="Number of solitary detainments");
+
+    const confinementsByCitizenship = groupDataByCountry(data, 'citizenship');
+
+    const map = new Map();
+    confinementsByCitizenship.forEach(d => {
+        map.set(d.key, d.values.length);
+    })
+
+    createMap(svg, topo, map);
+}
+
+function daysConfinementByCitizenship(error, topo, data) {
+    if (error) throw error;
+
+    let svg = d3.select("#daysOfConfinementsMap")
+    const width = +svg.attr("width");
+    const height = +svg.attr("height");
+
+    let path = createProjection(width, height);
+    const colorScale = createBinnedColorScale(domain=[1, 101, 501, 1001, 2501]);
+    createBinnedLegend(svg, colorScale,
+                       labels=['0', '1-100', '101-500', '501-1000', '1001-2500', '>2500'],
+                       title='Days of Solitary Confinement by Citizenship');
+
+    const confinementsByCitizenship = groupDataByCountry(data, 'citizenship');
+
+    const reducer = (accumulator, currentValue) => {
+        return accumulator + Number(currentValue.days_solitary);
     }
 
-    /**
-     *
-     */
-    const createSVG = (width, height, margin) => {
-        return d3.select("body").append("svg")
-                    .attr("width", width + margin.left + margin.right)
-                    .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-    }
-    /**
-     *
-     */
-    const addYearlyHistogram = (svg, groupedData, x, y, barWidth, height) => {
-        svg.selectAll(".bar")
-            .data(groupedData).enter()
-            .append("rect")
-                .attr("class", "bar")
-                .attr("data-year", d => d.key)
-                .attr("data-count", d => d.values.length)
-                .attr("x", d => x(d.key))
-                .attr("y", d => y(d.values.length))
-                .attr("width", barWidth)
-                .attr("height", d => height - y(d.values.length));
+    for (let i in confinementsByCitizenship) {
+        confinementsByCitizenship[i]['total_days'] =
+            confinementsByCitizenship[i].values.reduce(reducer, 0);
     }
 
-    /**
-     *
-     */
-    const addAxes = (svg, height, x, y, barWidth) => {
-        svg.append("g")
-            .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(x).tickFormat(d3.format(".0f")))
+    const map = new Map();
+    confinementsByCitizenship.forEach(d => {
+        map.set(d.key, d.total_days);
+    })
 
-        svg.append("g")
-            .call(d3.axisLeft(y));
+    createMap(svg, topo, map);
+}
+
+
+function createProjection(width, height) {
+    const projection = d3.geoNaturalEarth()
+        .scale(width / 2 / Math.PI)
+        .translate([width / 2, height / 2])
+    return path = d3.geoPath()
+        .projection(projection);
+}
+
+/**
+ * @param domain: Array
+ */
+function createBinnedColorScale(domain) {
+    const colorScheme = d3.schemeReds[domain.length];
+    colorScheme.unshift("#eee")
+
+    return colorScale = d3.scaleThreshold()
+        .domain(domain)
+        .range(colorScheme);
+}
+
+function createBinnedLegend(svg, colorScale, labels, title='Title') {
+    let g = svg.append("g")
+        .attr("class", "legendThreshold")
+        .attr("transform", "translate(20,20)");
+
+    g.append("text")
+        .attr("class", "caption")
+        .attr("x", 0)
+        .attr("y", -6)
+        .text(title);
+
+    const legend = d3.legendColor()
+        .labels(d => labels[d.i])
+        .shapePadding(4)
+        .scale(colorScale);
+
+    svg.select(".legendThreshold")
+        .call(legend);
     }
 
-    /**
-     * Histogram of confinements per year
-     */
-    const showConfinementsByYear = (originalData) => {
-        const margin = {top: 20, right: 20, bottom: 30, left: 40},
-              width = 300 - margin.left - margin.right,
-              height = 200 - margin.top - margin.bottom;
-        const barWidth = 30;
-
-        const confinementsByYear = d3.nest()
-            .key(d => d.placement_date.getFullYear())
-            .entries(originalData);
-
-        const scales = createGroupedDataScales(confinementsByYear, width, height);
-
-        let svg = createSVG(width, height, margin);
-        addYearlyHistogram(svg, confinementsByYear, scales.x, scales.y, barWidth, height);
-        addAxes(svg, height, scales.x, scales.y);
-    }
-
+function createMap(svg, topo, map) {
+    svg.append("g")
+        .attr("class", "countries")
+        .selectAll("path")
+        .data(topo.features)
+        .enter().append("path")
+            .attr("data-country", d => d.properties.name)
+            .attr("data-sum", d => map.get(d.properties.name) || 0)
+            .attr("fill", d => {
+                days = map.get(d.properties.name) || 0;
+                return colorScale(days);
+            })
+            .attr("d", path);
+}
 
 </script>
