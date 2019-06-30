@@ -183,10 +183,6 @@ function daysConfinementByCitizenship(error, topo, data) {
 
     const confinementsByCitizenship = groupDataByCountry(data, 'citizenship');
 
-    const reducer = (accumulator, currentValue) => {
-        return accumulator + Number(currentValue.days_solitary);
-    }
-
     for (let i in confinementsByCitizenship) {
         confinementsByCitizenship[i]['total_days'] =
             confinementsByCitizenship[i].values.reduce(reducer, 0);
