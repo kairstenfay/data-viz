@@ -13,6 +13,9 @@
             </a>
         </p>
     </header>
+    <main>
+        <p id="stats"></p>
+    </main>
 </body>
 
 <!-- <svg id="numberOfConfinementsBarchart" width="300" height="300"></svg> TODO -->
@@ -31,11 +34,24 @@ d3.queue()
     .await(ready);
 
 function ready(error, topo, data) {
+    stats(error, data);
     numberOfConfinementsBarChart(error, data);
     confinementsByCitizenship(error, topo, data);
     daysConfinementByCitizenship(error, topo, data);
 }
 
+function stats(error, data) {
+    const margin = {top: 20, right: 20, bottom: 30, left: 40},
+            width = 500 - margin.left - margin.right,
+            height = 200 - margin.top - margin.bottom;
+
+    let svg = createSVG("#stats", width, height, margin);
+    svg.append("text")
+        .attr("class", "caption")
+        .attr("x", 0)
+        .attr("y", -6)
+        .text(`Number of ICE solitary confinements : ${data.length}`);
+}
 /**
  *
  */
