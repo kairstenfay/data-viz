@@ -71,7 +71,7 @@ function numberOfConfinementsBarChart(error, data) {
 
     const scales = createGroupedDataScales(confinementsByYear, width, height);
 
-    let svg = createSVG(width, height, margin);
+    let svg = createSVG("body", width, height, margin);
     addYearlyHistogram(svg, confinementsByYear, scales.x, scales.y, barWidth, height);
     addAxes(svg, height, scales.x, scales.y);
 }
@@ -107,10 +107,10 @@ function createGroupedDataScales(groupedData, width, height) {
 }
 
 /**
- *
+ * @param domTarget: String
  */
-function createSVG(width, height, margin) {
-    return d3.select("body").append("svg")
+function createSVG(domTarget, width, height, margin) {
+    return d3.select(domTarget).append("svg")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
             .append("g")
@@ -171,7 +171,7 @@ function confinementsByCitizenship(error, topo, data) {
 function daysConfinementByCitizenship(error, topo, data) {
     if (error) throw error;
 
-    let svg = d3.select("#daysOfConfinementsMap")
+    let svg = d3.select("#daysOfConfinementsMap")  // todo combine with createSVG
     const width = +svg.attr("width");
     const height = +svg.attr("height");
 
