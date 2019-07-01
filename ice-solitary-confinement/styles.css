@@ -1,3 +1,47 @@
+@import url('https://fonts.googleapis.com/css?family=Barriecito|DM+Serif+Text&display=swap');
+
+h1 {
+    font-family: 'Barriecito', cursive;
+    font-size: 70px;
+    padding: 150px 0 5px 0;
+    background-color: #a50f15;
+    color: white;
+}
+
+a {
+    font-weight: bolder;
+    color: black;
+}
+
+#subtitle {
+    text-align: center;
+    background-color: #eee;
+    margin: -50px 0 200px 0;
+    padding: 10px 10px 30px 10px;
+    background-color: #eee;
+}
+
+h2, h3 {
+    font-family: sans-serif;
+    font-size: 24px;
+}
+
+body {
+    font-family: Georgia, serif;
+    width: 70%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+blockquote {
+    background-color: #eee;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 'light';
+    text-align: justify;
+    border-left: 5px solid #222;
+}
+
 .bar {
     fill: grey;
 }
@@ -21,4 +65,20 @@
     fill: #000;
     text-anchor: start;
     font-weight: bold;
+}
+
+#stats {
+    padding: 50px 0;
+}
+
+table {
+    font-family: sans-serif;
+    color: white;
+    background-color: #a50f15;
+    padding: 20px;
+    width: 90%;
+    margin: 0 auto;
+    font-size: 20px;
+    font-weight: 200;
+    line-height: 25px;
 }
