@@ -57,7 +57,8 @@
     </main>
 </body>
 
-<!-- <svg id="numberOfConfinementsBarchart" width="300" height="300"></svg> TODO -->
+<!-- todo: reconcile ways to define svg width/height -->
+<svg id="confinementsHistogram" width=400 height=400></svg>
 <svg id="numberOfConfinementsMap" width="960" height="600"></svg>
 <svg id="daysOfConfinementsMap" width="960" height="600"></svg>
 
@@ -110,9 +111,9 @@ const reducer = (accumulator, currentValue) => {
  *
  */
 function numberOfConfinementsBarChart(error, data) {
-    const margin = {top: 20, right: 20, bottom: 30, left: 40},
+    const margin = {top: 20, right: 20, bottom: 50, left: 100},
             width = 300 - margin.left - margin.right,
-            height = 200 - margin.top - margin.bottom;
+            height = 250 - margin.top - margin.bottom;
     const barWidth = 30;
 
     data.forEach((d, i) => {
@@ -121,13 +122,14 @@ function numberOfConfinementsBarChart(error, data) {
         }
         d.placement_date = new Date(d.placement_date);
     })
+
     const confinementsByYear = groupDataByCountry(data, 'placement_date');
-
     const scales = createGroupedDataScales(confinementsByYear, width, height);
+    let svg = createSVG("#confinementsHistogram", width, height, margin);
 
-    let svg = createSVG("body", width, height, margin);
     addYearlyHistogram(svg, confinementsByYear, scales.x, scales.y, barWidth, height);
-    addAxes(svg, height, scales.x, scales.y);
+    addAxes(svg, width, height, margin, scales.x, scales.y, xTitle="year",
+            yTitle="total confinements");
 }
 
 function groupDataByCountry(data, secondaryVariable) {
@@ -183,19 +185,37 @@ function addYearlyHistogram(svg, groupedData, x, y, barWidth, height) {
             .attr("x", d => x(d.key))
             .attr("y", d => y(d.values.length))
             .attr("width", barWidth)
-            .attr("height", d => height - y(d.values.length));
+            .attr("height", d => height - y(d.values.length))
+        .append("title")
+            .text(d => `In ${d.key}, ICE put ${d.values.length.toLocaleString()} people
+in solitary confinement`);
 }
 
 /**
  *
  */
-function addAxes(svg, height, x, y, barWidth) {
+function addAxes(svg, width, height, margin, x, y, xTitle="x title",
+                 yTitle="y title") {
     svg.append("g")
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x).tickFormat(d3.format(".0f")))
+        .attr("transform", `translate(0, ${height})`)
+        .call(d3.axisBottom(x).tickFormat(d3.format(".0f")));
+
+    svg.append("text")
+        .attr("transform", `translate(${width / 2}, ${height + margin.top + 20})`)
+        .style("text-anchor", "middle")
+        .text(xTitle);
 
     svg.append("g")
         .call(d3.axisLeft(y));
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left / 2)
+        .attr("x", 0 - height / 2)
+        .style('text-anchor', 'middle')
+        .text(yTitle);
+
+
 }
 
 function confinementsByCitizenship(error, topo, data) {
@@ -210,7 +230,7 @@ function confinementsByCitizenship(error, topo, data) {
     createBinnedLegend(svg, colorScale,
                        labels=['0', '1-5', '6-10', '11-25',
                                 '26-100', '101-1000', '> 1000'],
-                       title="Number of solitary detainments");
+                       title="Number of solitary confinements");
 
     const confinementsByCitizenship = groupDataByCountry(data, 'citizenship');
 

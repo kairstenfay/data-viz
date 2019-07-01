@@ -24,6 +24,7 @@ a {
 h2, h3 {
     font-family: sans-serif;
     font-size: 24px;
+    margin: 0 0 -5px 0;
 }
 
 body {
@@ -61,12 +62,6 @@ blockquote {
     font-family: sans-serif;
 }
 
-.caption {
-    fill: #000;
-    text-anchor: start;
-    font-weight: bold;
-}
-
 #stats {
     padding: 50px 0;
 }
@@ -77,8 +72,11 @@ table {
     background-color: #a50f15;
     padding: 20px;
     width: 90%;
-    margin: 0 auto;
+    margin: 5px auto;
     font-size: 20px;
-    font-weight: 200;
     line-height: 25px;
+}
+
+.data {
+    font-weight: 700;
 }
