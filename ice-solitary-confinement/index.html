@@ -48,7 +48,9 @@
                 that is often allowed only as a last resort.
         </blockquote>
 
-        <p id="stats"></p>
+        <div id="stats">
+            <h3>ICE Solitary Confinement stats (2012-2017):</h3>
+        </div>
 
     </header>
     <main>
@@ -84,14 +86,20 @@ function stats(error, data) {
 
     const days = data.reduce(reducer, 0);
 
-    let svg = d3.select('#stats').append('div');
-    svg.attr("class", "caption")
-        .attr("x", 0)
-        .attr("y", -6)
-        .html(`Number of ICE solitary confinements: ${data.length} <br>
-               Total days of solitary confinement: ${days} (${Math.round(days/365)} years) <br>
-               Average length of solitary per person:
-                    ${Math.round(days / data.length)} days`);
+    let svg = d3.select('#stats').append('table');
+    svg.attr("x", 0)
+        .attr("y", 0)
+        .html(`<tr>
+                <td>Total cases:</td>
+                <td>Total length of time:</td>
+                <td>Average confinement:</td>
+               </tr>
+               <tr>
+                <td class='data'>${Number(data.length).toLocaleString()}</td>
+                <td class='data'>${Number(days).toLocaleString()} days
+                                  (or ${Math.round(days/365)} years)</td>
+                <td class='data'>${Math.round(days / data.length)} days</td>
+               </tr>`);
 }
 
 const reducer = (accumulator, currentValue) => {
