@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+  <style>
+    svg {
+      font: 10px sans-serif;
+    }
+
+    #legend {
+      margin-bottom: -25px;
+    }
+
+    #legend svg {
+      width: 100%;
+    }
+
+    div.tooltip {
+      position: absolute;
+      text-align: center;
+      width: 250px;
+      padding: 2px;
+      font: 16px Arial;
+      background: ghostwhite;
+      border: 1px solid black;
+      pointer-events: none;
+      padding: 5px;
+    }
+
+    body {
+      background: #eef;
+      width: 80%;
+      margin: 0 auto;
+      font-family: Verdana, sans-serif;
+      text-align: center;
+    }
+    </style>
+
+    <header>
+        <title>Kickstarter Pledges</title>
+        <h1 id="title">Kickstarter Pledges</h1>
+        <p id="description">
+          Top 100 Most Pledged Kickstarter Campaigns Grouped By revenue_category
+        </p>
+        <div id="legend"></div>
+    </header>
+    <body>
+    </body>
+    <svg width="960" height="570"></svg>
+
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <!-- <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script> -->
+    <script>
+
+    var svg = d3.select("svg"),
+        width = +svg.attr("width"),
+        height = +svg.attr("height");
+
+    var fader = (color) => d3.interpolateRgb(color, "#fff")(0.2);
+        const color = d3.scaleOrdinal(d3.schemeCategory10.map(fader));
+        const format = d3.format(",d");
+
+    var treemap = d3.treemap()
+        .tile(d3.treemapResquarify)
+        .size([width, height])
+        .paddingInner(1);
+
+
+    const createLegend = (colorScale, categories) => {
+      const boxWidth = 20;
+      const boxHeight = 20;
+      const horizontalBoxPadding = 90;
+      const numPerRow = 4;
+
+      let legend = d3.select("#legend")
+        .append("svg")
+          .attr("transform", (d, i) => `translate(${0},${0})`);
+
+      legend.selectAll("legend")
+        .data(categories).enter()
+        .append("rect")
+          .attr("class", "legend-item")
+          .attr("x", (d, i) => (i % numPerRow) * (horizontalBoxPadding + boxWidth))
+          .attr("y", (d, i) => Math.floor(i/numPerRow) * boxHeight)
+          .attr("height", boxHeight)
+          .attr("width", boxWidth)
+          .style("fill", d => colorScale(d));
+
+      legend.selectAll("text")
+        .data(categories).enter()
+        .append("text")
+          .text(d => d)
+          .attr("x", (d, i) => (i % numPerRow) * (horizontalBoxPadding + boxWidth) + boxWidth)
+          .attr("y", (d, i) => Math.floor(i/numPerRow) * boxHeight + boxWidth/2)
+          .attr("dy", ".35em");
+      }
+
+    /**
+     * Creates the div element for the tooltip.
+     */
+    const renderTip = () => {
+      return d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .attr("id", "tooltip")
+        .style("opacity", 0);
+    }
+
+    /**
+     * Transitions the tooltip into view.
+     */
+    const tipTransitionIn = () => {
+      tip.transition().duration(200)
+            .style("opacity", .9);
+    }
+
+    const tipHTML = (d) => {
+      tip.html(`${d.data.revenue_category}
+                <hr>
+                ${d.data.franchise}<br/>
+                ${'Revenue' + d.revenue.toLocaleString()}`)
+            .attr("data-revenue", d.revenue)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY + 20) + "px");
+    }
+
+    /**
+     * Transitions the tooltip out of view.
+     */
+    const tipTransitionOut = () => {
+      tip.transition().duration(500)
+            .style("opacity", 0);
+    }
+
+    let tip = renderTip();
+
+    d3.csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-07-02/media_franchises.csv",
+    function(error, data) {
+      if (error) throw error;
+      console.table(data);
+      // let categories = data.children.map(d => d.franchise);
+
+      var root = d3.hierarchy(data)
+          .sum(sumByvalue)
+          .sort((a, b) => b.height - a.height || b.revenue - a.revenue);
+
+      treemap(root);
+
+      console.log(root.leaves());
+
+      var cell = svg.selectAll("g")
+        .data(root.leaves())
+        .enter().append("g")
+          .attr("transform", d => "translate(" + d.x0 + "," + d.y0 + ")");
+
+      cell.append("rect")
+          .attr("id", (d, i) => {
+            if (i % 5 === 0) {
+              console.log(d.data[i]);
+            }
+          })
+          .attr("class", "tile")
+          .attr("data-franchise", (d, i) => d.data[i].franchise)
+          .attr("data-revenue_category", (d, i) => d.data[i].revenue_category)
+          .attr("data-revenue", (d, i) => d.data[i].revenue)
+          .attr("width", d => d.x1 - d.x0)
+          .attr("height", d => d.y1 - d.y0)
+          .attr("fill", (d, i) => color(d.data[i].revenue_category))
+          .on("mouseover", function(d) {
+            tipTransitionIn();
+            tipHTML(d);
+          })
+          .on("mouseout", function(d) {
+              tipTransitionOut();
+          });
+
+      cell.append("text")
+        .selectAll("tspan")
+          .data((d, i) => d.data[i].franchise.split(/(?=\s[\w][^\d])/g))
+        .enter().append("tspan")
+          .attr("x", 4)
+          .attr("y", (d, i) => 13 + i * 10)
+          .text(d => d);
+
+      createLegend(color, categories);
+    });
+
+
+    const sumByvalue = (d) => d.revenue;
+
+    </script>
