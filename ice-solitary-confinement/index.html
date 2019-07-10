@@ -16,7 +16,8 @@
                     Investigative Journalists
             </p>
         </div>
-
+    </header>
+    <main>
         <h3>Thousands of Immigrants Suffer In US Solitary Confinement</h3>
         <blockquote cite="https://www.icij.org/investigations/solitary-voices/about-the-solitary-voices-investigation/">
                 United States immigration authorities hold more than 40,000 people in detention
@@ -51,16 +52,12 @@
         <div id="stats">
             <h3>ICE Solitary Confinement stats (2012-2017):</h3>
         </div>
-
-    </header>
-    <main>
+        <!-- todo: reconcile ways to define svg width/height -->
+        <svg id="confinementsHistogram" width=400 height=400></svg>
+        <svg id="numberOfConfinementsMap" width="960" height="600"></svg>
+        <svg id="daysOfConfinementsMap" width="960" height="600"></svg>
     </main>
 </body>
-
-<!-- todo: reconcile ways to define svg width/height -->
-<svg id="confinementsHistogram" width=400 height=400></svg>
-<svg id="numberOfConfinementsMap" width="960" height="600"></svg>
-<svg id="daysOfConfinementsMap" width="960" height="600"></svg>
 
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
@@ -74,6 +71,14 @@ d3.queue()
     .await(ready);
 
 function ready(error, topo, data) {
+    data.forEach(d => {
+        if (d.citizenship.toLowerCase() === "china, peoples republic of") {
+            d.citizenship = 'China'
+        }
+        return d;
+    });
+
+
     stats(error, data);
     numberOfConfinementsBarChart(error, data);
     confinementsByCitizenship(error, topo, data);
@@ -123,7 +128,8 @@ function numberOfConfinementsBarChart(error, data) {
         d.placement_date = new Date(d.placement_date);
     })
 
-    const confinementsByYear = groupDataByCountry(data, 'placement_date');
+    const confinementsByYear = groupData(data, 'placement_reason');
+    console.table(confinementsByYear);
     const scales = createGroupedDataScales(confinementsByYear, width, height);
     let svg = createSVG("#confinementsHistogram", width, height, margin);
 
@@ -132,7 +138,7 @@ function numberOfConfinementsBarChart(error, data) {
             yTitle="total confinements");
 }
 
-function groupDataByCountry(data, secondaryVariable) {
+function groupData(data, secondaryVariable) {
     let groupedData = null;
 
     if (!secondaryVariable.toLowerCase().includes('date')) {
@@ -180,15 +186,15 @@ function addYearlyHistogram(svg, groupedData, x, y, barWidth, height) {
         .data(groupedData).enter()
         .append("rect")
             .attr("class", "bar")
-            .attr("data-year", d => d.key)
+            .attr("data-reason", d => d.key)
             .attr("data-count", d => d.values.length)
             .attr("x", d => x(d.key))
             .attr("y", d => y(d.values.length))
             .attr("width", barWidth)
             .attr("height", d => height - y(d.values.length))
         .append("title")
-            .text(d => `In ${d.key}, ICE put ${d.values.length.toLocaleString()} people
-in solitary confinement`);
+            .text(d => `ICE put ${d.values.length.toLocaleString()} people
+in solitary confinement for ${d.key}.`);
 }
 
 /**
@@ -232,7 +238,7 @@ function confinementsByCitizenship(error, topo, data) {
                                 '26-100', '101-1000', '> 1000'],
                        title="Number of solitary confinements");
 
-    const confinementsByCitizenship = groupDataByCountry(data, 'citizenship');
+    const confinementsByCitizenship = groupData(data, 'citizenship');
 
     const map = new Map();
     confinementsByCitizenship.forEach(d => {
@@ -255,7 +261,8 @@ function daysConfinementByCitizenship(error, topo, data) {
                        labels=['0', '1-100', '101-500', '501-1000', '1001-2500', '>2500'],
                        title='Days of Solitary Confinement by Citizenship');
 
-    const confinementsByCitizenship = groupDataByCountry(data, 'citizenship');
+    const confinementsByCitizenship = groupData(data, 'citizenship');
+    console.table(confinementsByCitizenship);
 
     for (let i in confinementsByCitizenship) {
         confinementsByCitizenship[i]['total_days'] =
