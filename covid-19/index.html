@@ -22,6 +22,14 @@
         fill: #00b8aa;
     }
 
+    .bar.pending {
+        fill: #f2c80f;
+    }
+
+    .circle.death {
+        fill: #374649;
+    }
+
 </style>
 
 <script src="https://d3js.org/d3.v5.min.js"></script>
@@ -87,30 +95,19 @@
             .attr("text-anchor", "start")
             .text(data.y))
 
+        data.forEach(d => {
+            d['positive-height'] = y(0) - y(d.positive)
+            d['negative-height'] = y(d.positive) - y(d.negative)
+            d['pending-height'] = y(d.positive) - y(d.negative) - y(d.pending)
+        })
+        console.table(data)
+
         const svg = d3.selectAll("body").append("svg")
         .attr("viewBox", [0, 0, width, height]);
 
-        svg.append("g")
-        .selectAll("rect")
-        .data(data)
-        .join("rect")
-            .classed("bar positive", true)
-            .attr("data-state", d => d.state)
-            .attr("x", d => x(parseDate(d.rawDate)))
-            .attr("y", d => y(d.positive))
-            .attr("height", d => y(0) - y(d.positive))
-            .attr("width", 5)
-
-        svg.append("g")
-        .selectAll("rect")
-        .data(data)
-        .join("rect")
-            .classed("bar negative", true)
-            .attr("data-state", d => d.state)
-            .attr("x", d => x(parseDate(d.rawDate)))
-            .attr("y", d => y(d.negative))
-            .attr("height", d => y(d.positive) - y(d.negative))
-            .attr("width", 5)
+        addBars(svg, data, 'positive');
+        addBars(svg, data, 'negative');
+        addBars(svg, data, 'pending');
 
         svg.append("g")
         .call(xAxis);
@@ -121,4 +118,19 @@
     }).catch(function(error) {
         console.log(error)
     })
+
+
+    const addBars = (svg, data, barName, heightFunction) => {
+        svg.append("g")
+            .selectAll("rect")
+            .data(data)
+            .join("rect")
+                .classed(`bar ${barName}`, true)
+                .attr("data-state", d => d.state)
+                .attr("x", d => x(parseDate(d.rawDate)))
+                .attr("y", d => y(d[barName]))
+                .attr("height", d => d[`${barName}-height`])
+                .attr("width", 5)
+    }
+
 </script>
