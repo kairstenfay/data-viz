@@ -16,23 +16,23 @@
 
 <style>
 
-    .bar:hover {
+    .data:hover {
         opacity: 0.5;
     }
 
-    .bar.positive {
+    .data.positive {
         fill: #fe625e;
     }
 
-    .bar.negative {
+    .data.negative {
         fill: #00b8aa;
     }
 
-    .bar.pending {
+    .data.pending {
         fill: #f2c80f;
     }
 
-    .circle.death {
+    .data.death {
         fill: #374649;
     }
 
@@ -109,21 +109,38 @@
         console.table(data)
 
         const svg = d3.selectAll("body").append("svg")
-        .attr("viewBox", [0, 0, width, height]);
+                      .attr("viewBox", [0, 0, width, height]);
 
-        addBars(svg, data, 'positive', BAR_WIDTH);
-        addBars(svg, data, 'negative', BAR_WIDTH);
-        addBars(svg, data, 'pending', BAR_WIDTH);
+        // Define the div for the tooltip
+        const div = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        addBars(svg, data, 'positive', BAR_WIDTH, div);
+        addBars(svg, data, 'negative', BAR_WIDTH, div);
+        addBars(svg, data, 'pending', BAR_WIDTH, div);
 
         svg.append("g")
             .selectAll("circle")
             .data(data)
             .join("circle")
-                .classed(`bar death`, true)
+                .classed(`data death`, true)
                 .attr("data-state", d => d.state)
                 .attr("cx", d => BAR_WIDTH / 2 + CIRCLE_RADIUS / 2 + x(parseDate(d.rawDate)))
                 .attr("cy", d => y(d.death))
                 .attr("r", CIRCLE_RADIUS)
+                .on("mouseover", function(d) {
+                    div.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                    div	.html(d.date + "<br/>"  + d.death)
+                        .style("left", (d3.event.pageX) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                .on("mouseout", function(d) {
+                    div.transition()
+                        .duration(500)
+                })
 
         svg.append("g")
         .call(xAxis);
@@ -136,17 +153,29 @@
     })
 
 
-    const addBars = (svg, data, barName, barWidth) => {
+    const addBars = (svg, data, barName, barWidth, div) => {
         svg.append("g")
             .selectAll("rect")
             .data(data)
             .join("rect")
-                .classed(`bar ${barName}`, true)
+                .classed(`data ${barName}`, true)
                 .attr("data-state", d => d.state)
                 .attr("x", d => x(parseDate(d.rawDate)))
                 .attr("y", d => y(d[barName]))
                 .attr("height", d => d[`${barName}-height`])
                 .attr("width", barWidth)
+                .on("mouseover", function(d) {
+                    div.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                    div	.html(d.date + "<br/>"  + d[barName])
+                        .style("left", (d3.event.pageX) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                .on("mouseout", function(d) {
+                    div.transition()
+                        .duration(500)
+                })
     }
 
 </script>
