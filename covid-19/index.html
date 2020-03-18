@@ -5,7 +5,13 @@
     <header>
         <title>COVID-19 Tracking</title>
         <h1>COVID-19 Testing in U.S. States and Territories</h1>
+        <h2>Washington State</h2>
+        <h3>17 March 2020</h3>
+        <h3>by Kairsten Fay (Twitter @databae_)</h3>
     </header>
+    <select id="state-selector">
+        <option value="WA" selected="selected">WA</option>
+    </select>
 </body>
 
 <style>
@@ -44,10 +50,13 @@
 
     width = 500;
     height = 500;
-    margin = ({top: 30, right: 20, bottom: 30, left: 80})
+    margin = ({top: 30, right: 45, bottom: 30, left: 80})
+    const BAR_WIDTH = 28  // todo programmatically determine width
+    const CIRCLE_RADIUS = 3  // todo programatically determine radius
 
     d3.json("https://covidtracking.com/api/states/daily").then(function(data) {
-        data = data.filter((value, index) => value.state === 'WA')
+        const selectedState = document.getElementById('state-selector').value
+        data = data.filter((value, index) => value.state === selectedState)
 
         data.forEach(d => {
             // Preserve raw date string
@@ -81,7 +90,7 @@
 
         // Axes
         xAxis = g => g
-        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .attr("transform", `translate(15,${height - margin.bottom})`)
         .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
 
         yAxis = g => g
@@ -105,9 +114,19 @@
         const svg = d3.selectAll("body").append("svg")
         .attr("viewBox", [0, 0, width, height]);
 
-        addBars(svg, data, 'positive');
-        addBars(svg, data, 'negative');
-        addBars(svg, data, 'pending');
+        addBars(svg, data, 'positive', BAR_WIDTH);
+        addBars(svg, data, 'negative', BAR_WIDTH);
+        addBars(svg, data, 'pending', BAR_WIDTH);
+
+        svg.append("g")
+            .selectAll("circle")
+            .data(data)
+            .join("circle")
+                .classed(`bar death`, true)
+                .attr("data-state", d => d.state)
+                .attr("cx", d => BAR_WIDTH / 2 + CIRCLE_RADIUS / 2 + x(parseDate(d.rawDate)))
+                .attr("cy", d => y(d.death))
+                .attr("r", CIRCLE_RADIUS)
 
         svg.append("g")
         .call(xAxis);
@@ -120,7 +139,7 @@
     })
 
 
-    const addBars = (svg, data, barName, heightFunction) => {
+    const addBars = (svg, data, barName, barWidth) => {
         svg.append("g")
             .selectAll("rect")
             .data(data)
@@ -130,7 +149,7 @@
                 .attr("x", d => x(parseDate(d.rawDate)))
                 .attr("y", d => y(d[barName]))
                 .attr("height", d => d[`${barName}-height`])
-                .attr("width", 5)
+                .attr("width", barWidth)
     }
 
 </script>
