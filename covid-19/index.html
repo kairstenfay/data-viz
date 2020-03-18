@@ -39,6 +39,8 @@
     margin = ({top: 30, right: 20, bottom: 30, left: 80})
 
     d3.json("https://covidtracking.com/api/states/daily").then(function(data) {
+        data = data.filter((value, index) => value.state === 'WA')
+
         data.forEach(d => {
             // Preserve raw date string
             d['rawDate'] = d.date;
@@ -93,6 +95,7 @@
         .data(data)
         .join("rect")
             .classed("bar positive", true)
+            .attr("data-state", d => d.state)
             .attr("x", d => x(parseDate(d.rawDate)))
             .attr("y", d => y(d.positive))
             .attr("height", d => y(0) - y(d.positive))
@@ -103,6 +106,7 @@
         .data(data)
         .join("rect")
             .classed("bar negative", true)
+            .attr("data-state", d => d.state)
             .attr("x", d => x(parseDate(d.rawDate)))
             .attr("y", d => y(d.negative))
             .attr("height", d => y(d.positive) - y(d.negative))
