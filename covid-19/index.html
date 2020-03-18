@@ -89,14 +89,24 @@
         .attr("viewBox", [0, 0, width, height]);
 
         svg.append("g")
-        .attr("fill", "steelblue")
         .selectAll("rect")
         .data(data)
         .join("rect")
-        .attr("x", d => x(parseDate(d.rawDate)))
-        .attr("y", d => y(d.total))
-        .attr("height", d => y(0) - y(d.total))
-        .attr("width", 5)
+            .classed("bar positive", true)
+            .attr("x", d => x(parseDate(d.rawDate)))
+            .attr("y", d => y(d.positive))
+            .attr("height", d => y(0) - y(d.positive))
+            .attr("width", 5)
+
+        svg.append("g")
+        .selectAll("rect")
+        .data(data)
+        .join("rect")
+            .classed("bar negative", true)
+            .attr("x", d => x(parseDate(d.rawDate)))
+            .attr("y", d => y(d.negative))
+            .attr("height", d => y(d.positive) - y(d.negative))
+            .attr("width", 5)
 
         svg.append("g")
         .call(xAxis);
