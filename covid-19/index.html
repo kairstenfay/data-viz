@@ -24,77 +24,87 @@
 
 </style>
 
-<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://d3js.org/d3-time.v1.min.js"></script>
+<script src="https://d3js.org/d3-time-format.v2.min.js"></script>
 <script>
-    // set the dimensions and margins of the graph
-    const margin = {top: 20, right: 20, bottom: 30, left: 40},
-        width = 500 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
+    // data = Object.assign(d3.csvParse(await FileAttachment("alphabet.csv")
+    //         .text(), ({letter, frequency}) => ({name: letter, value: +frequency}))
+    //         .sort((a, b) => d3.descending(a.value, b.value)), {y: "↑ Frequency"})
+    parseDate = d3.timeParse("%Y%m%d");
+    formatDate = d3.timeFormat("%m-%d");
 
-    // set the ranges
-    let x = d3.scaleTime().range([0, width]);
-    let y = d3.scaleLinear().range([height, 0]);
+    width = 500;
+    height = 500;
+    margin = ({top: 30, right: 0, bottom: 30, left: 40})
 
-    // append the svg object to the body of the page
-    // append a 'group' element to 'svg'
-    // moves the 'group' element to the top left margin
-    let svg = d3.select("body")
-      .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-      ;
+    d3.json("https://covidtracking.com/api/states/daily").then(function(data) {
+        data.forEach(d => {
+            // Preserve raw date string
+            d['rawDate'] = d.date;
+            d['date'] = formatDate(parseDate(d.date))
 
+            d['positive'] = d.positive || 0
+            d['negative'] = d.negative || 0
+            d['pending'] = d.pending || 0
+            d['death'] = d.death || 0
+            d['total'] = d.total || 0
+        });
+        console.table(data)
 
-    // get the data
-    d3.json("https://covidtracking.com/api/states/daily",
-    function(error, data) {
-      if (error) throw error;
-        console.table(data);
+        // Extract unique dates
+        const dateRange = data.map(d => d.rawDate)
+                        .filter((value, index, arr) => arr.indexOf(value) === index)
+                        .sort()
+                        .map(d => parseDate(d));
+        console.log(dateRange)
 
-      // Scale the range of the data in the domains
-      x.domain([d3.min(data, d => d.date), d3.max(data, d => d.date)]);
-      y.domain([0, d3.max(data, d => d.total)]);
+        // Scales
+        x = d3.scaleTime()
+        .domain([Math.min(...dateRange), Math.max(...dateRange)])
+        .range([margin.left, width - margin.right])
+        // .padding(0.1)
 
-      // Add data to the svg
-      svg.selectAll("svg")
-          .data(data, d => d.state === 'WA').enter()
+        y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.total)]).nice()
+        .range([height - margin.bottom, margin.top])
 
-      // append the rectangles for the bar char
-            .append("rect")
-            .classed("bar positive", true)
-            .attr("data-state", d => d.state)
-            .attr("data-date", d => d.date)
-            .attr("data-positive", d => d.positive)
-            .attr("width", 10) // x.bandwidth())
-            .attr("x", d => x(d.date))
-            .attr("y", d => y(d.positive))
-            .attr("height", d => height - y(d.positive))
-        ;
+        // Axes
+        xAxis = g => g
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
 
-    //   svg.selectAll()
-    //       .data(data)
-    //       .selectAll()
-    //     //   .data(d => d.state === 'WA').enter()
-    //       .append("rect")
-    //       .classed("bar negative", true)
-    //       .attr("data-state", d => d.state)
-    //       .attr("data-date", d => d.date)
-    //       .attr("data-negative", d => d.negative)
-    //       .attr("width", 10) // x.bandwidth())
-    //       .attr("x", d => x(d.date))
-    //       .attr("y", d => y(d.negative))
-    //       .attr("height", d => height - y(d.negative));
+        yAxis = g => g
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y))
+        .call(g => g.select(".domain").remove())
+        .call(g => g.append("text")
+            .attr("x", -margin.left)
+            .attr("y", 10)
+            .attr("fill", "currentColor")
+            .attr("text-anchor", "start")
+            .text(data.y))
 
-      // add the x Axis
-      svg.append("g")
-          .attr("transform", "translate(0," + height + ")")
-          .call(d3.axisBottom(x));
+        const svg = d3.selectAll("body").append("svg")
+        .attr("viewBox", [0, 0, width, height]);
 
-      // add the y Axis
-      svg.append("g")
-          .call(d3.axisLeft(y));
+        svg.append("g")
+        .attr("fill", "steelblue")
+        .selectAll("rect")
+        .data(data)
+        .join("rect")
+        .attr("x", d => x(parseDate(d.rawDate)))
+        .attr("y", d => y(d.total))
+        .attr("height", d => y(0) - y(d.total))
+        .attr("width", 5)
 
-    });
+        svg.append("g")
+        .call(xAxis);
+
+        svg.append("g")
+        .call(yAxis);
+
+    }).catch(function(error) {
+        console.log(error)
+    })
 </script>
