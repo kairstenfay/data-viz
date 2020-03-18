@@ -133,7 +133,7 @@
                     div.transition()
                         .duration(200)
                         .style("opacity", .9);
-                    div	.html(d.date + "<br/>"  + d.death)
+                    div	.html(`Total deaths as of ${d.date}:<br/>${d.death}`)
                         .style("left", (d3.event.pageX) + "px")
                         .style("top", (d3.event.pageY - 28) + "px");
                 })
@@ -168,7 +168,7 @@
                     div.transition()
                         .duration(200)
                         .style("opacity", .9);
-                    div	.html(d.date + "<br/>"  + d[barName])
+                    div	.html(`Total ${barName} results as of ${d.date}:<br/>${d[barName]}`)
                         .style("left", (d3.event.pageX) + "px")
                         .style("top", (d3.event.pageY - 28) + "px");
                 })
