@@ -42,9 +42,6 @@
 <script src="https://d3js.org/d3-time.v1.min.js"></script>
 <script src="https://d3js.org/d3-time-format.v2.min.js"></script>
 <script>
-    // data = Object.assign(d3.csvParse(await FileAttachment("alphabet.csv")
-    //         .text(), ({letter, frequency}) => ({name: letter, value: +frequency}))
-    //         .sort((a, b) => d3.descending(a.value, b.value)), {y: "↑ Frequency"})
     parseDate = d3.timeParse("%Y%m%d");
     formatDate = d3.timeFormat("%m-%d");
 
