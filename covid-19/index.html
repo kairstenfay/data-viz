@@ -46,9 +46,9 @@
     formatDate = d3.timeFormat("%m-%d");
 
     width = 500;
-    height = 500;
+    height = 200;
     margin = ({top: 30, right: 45, bottom: 30, left: 80})
-    const BAR_WIDTH = 28  // todo programmatically determine width
+    const BAR_WIDTH = 10  // todo programmatically determine width
     const CIRCLE_RADIUS = 3  // todo programatically determine radius
 
     d3.json("https://covidtracking.com/api/states/daily").then(function(data) {
