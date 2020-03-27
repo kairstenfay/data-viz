@@ -5,8 +5,6 @@ import * as d3 from "d3";
 const parseDate = d3.timeParse("%Y%m%d")
 const formatDate = d3.timeFormat("%m-%d")
 const margin = ({top: 30, right: 40, bottom: 30, left: 40})
-const width = window.innerWidth
-const height = window.innerWidth / 3
 const BAR_WIDTH = 10  // todo programmatically determine width
 const CIRCLE_RADIUS = 3  // todo programatically determine radius
 const DEFAULT_STATE_VALUE = 'select state'
@@ -32,7 +30,7 @@ const clearSvg = (svg) => {
   svg.selectAll("g").remove()
 }
 
-const scales = (data) => {
+const scales = (data, width, height) => {
   const dateRange = data.map(d => d.rawDate)
     .filter((value, index, arr) => arr.indexOf(value) === index)
     .sort()
@@ -54,8 +52,27 @@ function App() {
   // confusingly named 'state', but I mean U.S. state
   const [state, setState] = useState(null)
   const [stateList, setStateList] = useState([DEFAULT_STATE_VALUE])
+  const [dimensions, setDimensions] = useState({
+    h: window.innerWidth / 2.5,
+    w: window.innerWidth
+  })
 
   const myRef = useRef()
+
+  useEffect(() => {
+    function handleResize() {
+      setDimensions({
+        h: window.innerWidth / 2.5,
+        w: window.innerWidth
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  })
 
   useEffect(() => {
     data.then(data => {
@@ -66,14 +83,14 @@ function App() {
         data = data.filter(d => d.state === state)
       }
 
-      const {x, y} = scales(data)
+      const {x, y} = scales(data, dimensions.w, dimensions.h)
 
       const svg = d3.select(myRef.current)
       clearSvg(svg)
 
       // Axes
       const xAxis = g => g
-      .attr("transform", `translate(15,${height - margin.bottom})`)
+      .attr("transform", `translate(15,${dimensions.h - margin.bottom})`)
       .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
 
       const yAxis = g => g
@@ -104,7 +121,7 @@ function App() {
       svg.append("g")
       .call(yAxis)
 
-  })}, [state])
+  })}, [state, data, dimensions])
 
 
   return (
@@ -125,7 +142,7 @@ function App() {
             ))}
         </select>
         <br />
-        <svg ref={myRef} width={width} height={height}></svg>
+        <svg ref={myRef} width={dimensions.w} height={dimensions.h}></svg>
       </div>
     </div>
   );
