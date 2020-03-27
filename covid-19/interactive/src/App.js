@@ -27,7 +27,6 @@ async function getData() {
 
 const clearSvg = (svg) => {
   svg.selectAll("circle").remove()
-  svg.selectAll("g").remove()
 }
 
 const scales = (data, width, height) => {
@@ -79,30 +78,20 @@ function App() {
       setStateList([DEFAULT_STATE_VALUE].concat(
         Array(...new Set(data.map(d => d.state)))))
 
-      if (state && state !== DEFAULT_STATE_VALUE) {
+      const svg = d3.select(myRef.current)
+      clearSvg(svg)
+
+      const stateChanged = state && state !== DEFAULT_STATE_VALUE
+
+      if (stateChanged) {
         data = data.filter(d => d.state === state)
       }
 
       const {x, y} = scales(data, dimensions.w, dimensions.h)
 
-      const svg = d3.select(myRef.current)
-      clearSvg(svg)
-
-      // Axes
-      const xAxis = g => g
-        .attr("transform", `translate(15,${dimensions.h - margin.bottom})`)
-        .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
-
-      const yAxis = g => g
-        .attr("transform", `translate(${margin.left},0)`)
-        .call(d3.axisLeft(y))
-        .call(g => g.select(".domain").remove())
-        .call(g => g.append("text")
-            .attr("x", -margin.left)
-            .attr("y", 10)
-            .attr("fill", "currentColor")
-            .attr("text-anchor", "start")
-            .text(data.y))
+      const t = d3.transition()
+        .duration(750)
+        .ease(d3.easeCubicOut)
 
       svg
         .append("g")
@@ -115,11 +104,45 @@ function App() {
             .attr("cy", d => y(d.death))
             .attr("r", CIRCLE_RADIUS)
 
-      svg.append("g")
-        .call(xAxis)
 
-      svg.append("g")
-        .call(yAxis)
+      d3.selectAll("circle").transition(t).style("fill", "red");
+
+      // Axes
+      const xAxis = g => g
+        .attr("transform", `translate(15,${dimensions.h - margin.bottom})`)
+        .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
+        .classed("xAxis", true)
+
+      const yAxis = g => g
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y))
+        .call(g => g.select(".domain").remove())
+        .call(g => g.append("text")
+            .attr("x", -margin.left)
+            .attr("y", 10)
+            .attr("fill", "currentColor")
+            .attr("text-anchor", "start")
+            .text(data.y))
+        .classed("yAxis", true)
+
+      if (stateChanged) {
+        svg.select(".xAxis")
+          .transition(t)
+          .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
+
+        svg.select(".yAxis")
+          .transition(t)
+          .call(d3.axisLeft(y))
+
+      } else {
+        svg.append("g")
+          .call(xAxis)
+
+        svg.append("g")
+          .call(yAxis)
+      }
+
+
 
   })}, [state, data, dimensions])
 
