@@ -28,6 +28,27 @@ async function getData() {
   return data
 }
 
+const clearSvg = (svg) => {
+  svg.selectAll("circle").remove()
+  svg.selectAll("g").remove()
+}
+
+const scales = (data) => {
+  const dateRange = data.map(d => d.rawDate)
+    .filter((value, index, arr) => arr.indexOf(value) === index)
+    .sort()
+    .map(d => parseDate(d))
+
+  const x = d3.scaleTime()
+      .domain([Math.min(...dateRange), Math.max(...dateRange)])
+      .range([margin.left, width - margin.right])
+
+  const y = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.death)]).nice()
+      .range([height - margin.bottom, margin.top])
+
+  return {x, y}
+}
 
 function App() {
   const [data, setData] = useState(getData())
@@ -44,25 +65,11 @@ function App() {
       }
       // console.table(data)
 
-      const dateRange = data.map(d => d.rawDate)
-        .filter((value, index, arr) => arr.indexOf(value) === index)
-        .sort()
-        .map(d => parseDate(d));
+      const {x, y} = scales(data)
 
-      // Scales
-      const x = d3.scaleTime()
-      .domain([Math.min(...dateRange), Math.max(...dateRange)])
-      .range([margin.left, width - margin.right])
-      // .padding(0.1)
-
-      const y = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d.death)]).nice()
-      .range([height - margin.bottom, margin.top])
 
       const svg = d3.select(myRef.current)
-      svg.selectAll("circle").remove()
-      svg.selectAll("g").remove()
-
+      clearSvg(svg)
 
       // Axes
       const xAxis = g => g
