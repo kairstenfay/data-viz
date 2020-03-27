@@ -10,6 +10,7 @@ const height = 300;
 const margin = ({top: 30, right: 45, bottom: 30, left: 80})
 const BAR_WIDTH = 10  // todo programmatically determine width
 const CIRCLE_RADIUS = 3  // todo programatically determine radius
+const DEFAULT_STATE_VALUE = 'select state'
 
 async function getData() {
   const data = await d3.json("https://covidtracking.com/api/states/daily")
@@ -27,27 +28,21 @@ async function getData() {
   return data
 }
 
-function App() {
-  const [data, setData] = useState([5, 7, 9, 13, 25])
 
-  const svgRef = useRef()
+function App() {
+  const [data, setData] = useState(getData())
+  // confusingly named 'state', but I mean U.S. state
+  const [state, setState] = useState(null)
+  const [stateList] = useState([DEFAULT_STATE_VALUE, 'WA', 'NY', 'CA'])
+
   const myRef = useRef()
 
   useEffect(() => {
-    const svg = d3.select(svgRef.current)
-    svg
-      .selectAll("circle")
-      .data(data)
-      .join("circle")
-      .attr("r", value => value)
-      .attr("cx", value => value * 2)
-      .attr("cy", value => value * 2)
-      .attr("stroke", "red");
-  }, [data])
-
-  useEffect(() => {
-    getData().then(data => {
-      console.table(data)
+    data.then(data => {
+      if (state && state !== DEFAULT_STATE_VALUE) {
+        data = data.filter(d => d.state === state)
+      }
+      // console.table(data)
 
       const dateRange = data.map(d => d.rawDate)
         .filter((value, index, arr) => arr.indexOf(value) === index)
@@ -66,6 +61,8 @@ function App() {
 
       const svg = d3.select(myRef.current)
 
+      svg.selectAll("circle").remove()
+
       svg
         .append("g")
         .selectAll("circle")
@@ -76,14 +73,21 @@ function App() {
             .attr("cx", d => BAR_WIDTH / 2 + CIRCLE_RADIUS / 2 + x(parseDate(d.rawDate)))
             .attr("cy", d => y(d.death))
             .attr("r", CIRCLE_RADIUS)
-  })}, [myRef])
+  })}, [state])
 
 
   return (
     <>
-      <svg ref={svgRef}></svg>
-      <br />
       <svg ref={myRef} width={width} height={height}></svg>
+      <select id="state-selector"
+        defaultValue={stateList[0]}
+        onChange={(e) => setState(e.target.value)}>
+
+        {stateList.map(state => (
+          <option key={state} value={state}>{state}</option>
+        ))}
+
+    </select>
     </>
   );
 }
