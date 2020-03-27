@@ -4,10 +4,9 @@ import * as d3 from "d3";
 
 const parseDate = d3.timeParse("%Y%m%d")
 const formatDate = d3.timeFormat("%m-%d")
-
-const width = 600;
-const height = 300;
-const margin = ({top: 30, right: 45, bottom: 30, left: 80})
+const margin = ({top: 30, right: 40, bottom: 30, left: 40})
+const width = window.innerWidth
+const height = window.innerWidth / 3
 const BAR_WIDTH = 10  // todo programmatically determine width
 const CIRCLE_RADIUS = 3  // todo programatically determine radius
 const DEFAULT_STATE_VALUE = 'select state'
@@ -115,18 +114,19 @@ function App() {
           U.S. COVID-19 Deaths
         </p>
       </header>
+      <p id="rotate-device">Please rotate your device</p>
+      <div id="data-viz">
+        <select id="state-selector"
+          defaultValue={stateList[0]}
+          onChange={(e) => setState(e.target.value)}>
 
-      <select id="state-selector"
-        defaultValue={stateList[0]}
-        onChange={(e) => setState(e.target.value)}>
-
-        {stateList.map(state => (
-          <option key={state} value={state}>{state}</option>
-          ))}
-      </select>
-
-      <svg ref={myRef} width={width} height={height}></svg>
-
+          {stateList.map(state => (
+            <option key={state} value={state}>{state}</option>
+            ))}
+        </select>
+        <br />
+        <svg ref={myRef} width={width} height={height}></svg>
+      </div>
     </div>
   );
 }

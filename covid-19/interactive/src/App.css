@@ -32,3 +32,26 @@
 .data.death {
   fill: #374649;
 }
+
+@media (max-width: 500px) {
+  #rotate-device {
+    margin: 0;
+    height: 90vh;
+    width: 100vw;
+    background-color: rgba(0, 128, 128, 0.568);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+  }
+
+  #data-viz {
+    display: none;
+  }
+}
+
+@media (min-wdith: 501px) {
+  #rotate-device {
+    visibility:hidden
+  }
+}
