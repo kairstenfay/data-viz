@@ -1,0 +1,138 @@
+import React from 'react';
+import "d3"
+
+const parseDate = d3.timeParse("%Y%m%d");
+const formatDate = d3.timeFormat("%m-%d");
+
+const width = 500;
+const height = 200;
+const margin = ({top: 30, right: 45, bottom: 30, left: 80})
+const BAR_WIDTH = 10  // todo programmatically determine width
+const CIRCLE_RADIUS = 3  // todo programatically determine radius
+
+d3.json("https://covidtracking.com/api/states/daily").then(function(data) {
+    const selectedState = document.getElementById('state-selector').value
+    data = data.filter((value, index) => value.state === selectedState)
+
+    data.forEach(d => {
+        // Preserve raw date string
+        d['rawDate'] = d.date;
+        d['date'] = formatDate(parseDate(d.date))
+
+        d['positive'] = d.positive || 0
+        d['negative'] = d.negative || 0
+        d['pending'] = d.pending || 0
+        d['death'] = d.death || 0
+        d['total'] = d.total || 0
+    });
+    console.table(data)
+
+    // Extract unique dates
+    const dateRange = data.map(d => d.rawDate)
+                    .filter((value, index, arr) => arr.indexOf(value) === index)
+                    .sort()
+                    .map(d => parseDate(d));
+    console.log(dateRange)
+
+    // Scales
+    x = d3.scaleTime()
+    .domain([Math.min(...dateRange), Math.max(...dateRange)])
+    .range([margin.left, width - margin.right])
+    // .padding(0.1)
+
+    y = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.total)]).nice()
+    .range([height - margin.bottom, margin.top])
+
+    // Axes
+    xAxis = g => g
+    .attr("transform", `translate(15,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
+
+    yAxis = g => g
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y))
+    .call(g => g.select(".domain").remove())
+    .call(g => g.append("text")
+        .attr("x", -margin.left)
+        .attr("y", 10)
+        .attr("fill", "currentColor")
+        .attr("text-anchor", "start")
+        .text(data.y))
+
+    data.forEach(d => {
+        d['positive-height'] = y(0) - y(d.positive)
+        d['negative-height'] = y(d.positive) - y(d.negative)
+        d['pending-height'] = y(d.positive) - y(d.negative) - y(d.pending)
+    })
+    console.table(data)
+
+    const svg = d3.selectAll("body").append("svg")
+                    .attr("viewBox", [0, 0, width, height]);
+
+    // Define the div for the tooltip
+    const div = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    addBars(svg, data, 'positive', BAR_WIDTH, div);
+    addBars(svg, data, 'negative', BAR_WIDTH, div);
+    addBars(svg, data, 'pending', BAR_WIDTH, div);
+
+    svg.append("g")
+        .selectAll("circle")
+        .data(data)
+        .join("circle")
+            .classed(`data death`, true)
+            .attr("data-state", d => d.state)
+            .attr("cx", d => BAR_WIDTH / 2 + CIRCLE_RADIUS / 2 + x(parseDate(d.rawDate)))
+            .attr("cy", d => y(d.death))
+            .attr("r", CIRCLE_RADIUS)
+            .on("mouseover", function(d) {
+                div.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                div	.html(`Total deaths as of ${d.date}:<br/>${d.death}`)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                div.transition()
+                    .duration(500)
+            })
+
+    svg.append("g")
+    .call(xAxis);
+
+    svg.append("g")
+    .call(yAxis);
+
+}).catch(function(error) {
+    console.log(error)
+})
+
+
+const addBars = (svg, data, barName, barWidth, div) => {
+    svg.append("g")
+        .selectAll("rect")
+        .data(data)
+        .join("rect")
+            .classed(`data ${barName}`, true)
+            .attr("data-state", d => d.state)
+            .attr("x", d => x(parseDate(d.rawDate)))
+            .attr("y", d => y(d[barName]))
+            .attr("height", d => d[`${barName}-height`])
+            .attr("width", barWidth)
+            .on("mouseover", function(d) {
+                div.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                div	.html(`Total ${barName} results as of ${d.date}:<br/>${d[barName]}`)
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                div.transition()
+                    .duration(500)
+            })
+}
