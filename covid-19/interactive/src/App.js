@@ -60,8 +60,25 @@ function App() {
       .range([height - margin.bottom, margin.top])
 
       const svg = d3.select(myRef.current)
-
       svg.selectAll("circle").remove()
+      svg.selectAll("g").remove()
+
+
+      // Axes
+      const xAxis = g => g
+      .attr("transform", `translate(15,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
+
+      const yAxis = g => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y))
+      .call(g => g.select(".domain").remove())
+      .call(g => g.append("text")
+          .attr("x", -margin.left)
+          .attr("y", 10)
+          .attr("fill", "currentColor")
+          .attr("text-anchor", "start")
+          .text(data.y))
 
       svg
         .append("g")
@@ -73,6 +90,13 @@ function App() {
             .attr("cx", d => BAR_WIDTH / 2 + CIRCLE_RADIUS / 2 + x(parseDate(d.rawDate)))
             .attr("cy", d => y(d.death))
             .attr("r", CIRCLE_RADIUS)
+
+      svg.append("g")
+      .call(xAxis)
+
+      svg.append("g")
+      .call(yAxis)
+
   })}, [state])
 
 
