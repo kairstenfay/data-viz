@@ -51,7 +51,7 @@ const scales = (data) => {
 }
 
 function App() {
-  const [data, setData] = useState(getData())
+  const [data] = useState(getData())
   // confusingly named 'state', but I mean U.S. state
   const [state, setState] = useState(null)
   const [stateList] = useState([DEFAULT_STATE_VALUE, 'WA', 'NY', 'CA'])
