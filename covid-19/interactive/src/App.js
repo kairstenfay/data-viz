@@ -108,22 +108,25 @@ function App() {
 
 
   return (
-    <>
-      <header>
-        U.S. COVID-19 Testing Progress
+    <div className="App">
+      <header className="App-header">
+        <p>
+          U.S. COVID-19 Deaths
+        </p>
       </header>
-      <svg ref={myRef}
-       width={width} height={height}></svg>
+
       <select id="state-selector"
         defaultValue={stateList[0]}
         onChange={(e) => setState(e.target.value)}>
 
         {stateList.map(state => (
           <option key={state} value={state}>{state}</option>
-        ))}
+          ))}
+      </select>
 
-    </select>
-    </>
+      <svg ref={myRef} width={width} height={height}></svg>
+
+    </div>
   );
 }
 
