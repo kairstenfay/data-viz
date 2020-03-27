@@ -90,19 +90,19 @@ function App() {
 
       // Axes
       const xAxis = g => g
-      .attr("transform", `translate(15,${dimensions.h - margin.bottom})`)
-      .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
+        .attr("transform", `translate(15,${dimensions.h - margin.bottom})`)
+        .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
 
       const yAxis = g => g
-      .attr("transform", `translate(${margin.left},0)`)
-      .call(d3.axisLeft(y))
-      .call(g => g.select(".domain").remove())
-      .call(g => g.append("text")
-          .attr("x", -margin.left)
-          .attr("y", 10)
-          .attr("fill", "currentColor")
-          .attr("text-anchor", "start")
-          .text(data.y))
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y))
+        .call(g => g.select(".domain").remove())
+        .call(g => g.append("text")
+            .attr("x", -margin.left)
+            .attr("y", 10)
+            .attr("fill", "currentColor")
+            .attr("text-anchor", "start")
+            .text(data.y))
 
       svg
         .append("g")
@@ -116,10 +116,10 @@ function App() {
             .attr("r", CIRCLE_RADIUS)
 
       svg.append("g")
-      .call(xAxis)
+        .call(xAxis)
 
       svg.append("g")
-      .call(yAxis)
+        .call(yAxis)
 
   })}, [state, data, dimensions])
 
