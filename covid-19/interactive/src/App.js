@@ -7,7 +7,7 @@ const formatDate = d3.timeFormat("%m-%d")
 const margin = ({top: 30, right: 40, bottom: 30, left: 40})
 const BAR_WIDTH = 10  // todo programmatically determine width
 const CIRCLE_RADIUS = 3  // todo programatically determine radius
-const DEFAULT_STATE_VALUE = 'select state'
+const DEFAULT_STATE_VALUE = 'select'
 
 async function getData() {
   const data = await d3.json("https://covidtracking.com/api/states/daily")
@@ -128,7 +128,8 @@ function App() {
     <div className="App">
       <header className="App-header">
         <p>
-          U.S. COVID-19 Deaths
+          COVID-19 Deaths<br />
+          U.S. States and Territories
         </p>
       </header>
       <p id="rotate-device">Please rotate your device</p>
