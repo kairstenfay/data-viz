@@ -44,7 +44,7 @@ const scales = (data) => {
       .range([margin.left, width - margin.right])
 
   const y = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d.death)]).nice()
+      .domain([0, d3.max(data, d => d.death) || 1]).nice()
       .range([height - margin.bottom, margin.top])
 
   return {x, y}
