@@ -63,7 +63,6 @@ function App() {
       if (state && state !== DEFAULT_STATE_VALUE) {
         data = data.filter(d => d.state === state)
       }
-      // console.table(data)
 
       const {x, y} = scales(data)
 
