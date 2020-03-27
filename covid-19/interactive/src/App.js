@@ -109,7 +109,11 @@ function App() {
 
   return (
     <>
-      <svg ref={myRef} width={width} height={height}></svg>
+      <header>
+        U.S. COVID-19 Testing Progress
+      </header>
+      <svg ref={myRef}
+       width={width} height={height}></svg>
       <select id="state-selector"
         defaultValue={stateList[0]}
         onChange={(e) => setState(e.target.value)}>
