@@ -54,18 +54,20 @@ function App() {
   const [data] = useState(getData())
   // confusingly named 'state', but I mean U.S. state
   const [state, setState] = useState(null)
-  const [stateList] = useState([DEFAULT_STATE_VALUE, 'WA', 'NY', 'CA'])
+  const [stateList, setStateList] = useState([DEFAULT_STATE_VALUE])
 
   const myRef = useRef()
 
   useEffect(() => {
     data.then(data => {
+      setStateList([DEFAULT_STATE_VALUE].concat(
+        Array(...new Set(data.map(d => d.state)))))
+
       if (state && state !== DEFAULT_STATE_VALUE) {
         data = data.filter(d => d.state === state)
       }
 
       const {x, y} = scales(data)
-
 
       const svg = d3.select(myRef.current)
       clearSvg(svg)
