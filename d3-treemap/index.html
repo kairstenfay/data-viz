@@ -142,6 +142,7 @@
           .sort((a, b) => b.height - a.height || b.value - a.value);
 
       treemap(root);
+      console.log(root.leaves());
 
       var cell = svg.selectAll("g")
         .data(root.leaves())
