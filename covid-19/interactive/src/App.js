@@ -76,6 +76,13 @@ function App() {
   const scatterplotRef = useRef()
   const mapRef = useRef()
 
+  const handleClick = (event) => {
+    const target = event.target.__data__
+    if (target) {
+      fipsMapper.then(mapper => setState(mapper[target.id].abbreviation))
+    }
+  }
+  
   useEffect(() => {
     function handleResize() {
       setDimensions({
@@ -197,18 +204,12 @@ function App() {
         <svg ref={scatterplotRef} width={dimensions.w} height={dimensions.h}></svg>
         <br />
         <svg ref={mapRef} width={dimensions.w} height={dimensions.h}
-          onClick={(event) => {
-            const target = event.target.__data__
-            if (target) {
-              fipsMapper.then(mapper => {
-                console.log(target.id)
-                console.log(mapper[target.id].abbreviation)
-              })
-            }
-          }}></svg>
+          onClick={handleClick}></svg>
       </div>
     </div>
   );
 }
+
+
 
 export default App;
