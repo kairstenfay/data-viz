@@ -25,11 +25,13 @@ async function getData() {
   return data
 }
 
-const clearSvg = (svg) => {
-  svg.selectAll("circle").remove()
-}
 
-const scales = (data, width, height) => {
+/**
+ *
+ * @param {*} data
+ * @param {Object} d dimensions {w: int, h: int}
+ */
+const scales = (data, d) => {
   const dateRange = data.map(d => d.rawDate)
     .filter((value, index, arr) => arr.indexOf(value) === index)
     .sort()
@@ -37,19 +39,24 @@ const scales = (data, width, height) => {
 
   const x = d3.scaleTime()
       .domain([Math.min(...dateRange), Math.max(...dateRange)])
-      .range([margin.left, width - margin.right])
+      .range([margin.left, d.w - margin.right])
 
   const y = d3.scaleLinear()
       .domain([0, d3.max(data, d => d.death) || 1]).nice()
-      .range([height - margin.bottom, margin.top])
+      .range([d.h - margin.bottom, margin.top])
 
   return {x, y}
 }
 
+const t = d3.transition()
+  .duration(750)
+  .ease(d3.easeCubicOut)
+
+
 function App() {
   const [data] = useState(getData())
   // confusingly named 'state', but I mean U.S. state
-  const [state, setState] = useState(null)
+  const [state, setState] = useState(DEFAULT_STATE_VALUE)
   const [stateList, setStateList] = useState([DEFAULT_STATE_VALUE])
   const [dimensions, setDimensions] = useState({
     h: window.innerWidth / 2.5,
@@ -79,33 +86,21 @@ function App() {
         Array(...new Set(data.map(d => d.state)))))
 
       const svg = d3.select(myRef.current)
-      clearSvg(svg)
 
-      const stateChanged = state && state !== DEFAULT_STATE_VALUE
-
-      if (stateChanged) {
-        data = data.filter(d => d.state === state)
-      }
-
-      const {x, y} = scales(data, dimensions.w, dimensions.h)
-
-      const t = d3.transition()
-        .duration(750)
-        .ease(d3.easeCubicOut)
-
-      svg
+      const addDataPoints = () => (
+        svg
         .append("g")
         .selectAll("circle")
         .data(data)
         .join("circle")
-            .classed(`data death`, true)
-            .attr("data-state", d => d.state)
-            .attr("cx", d => BAR_WIDTH / 2 + CIRCLE_RADIUS / 2 + x(parseDate(d.rawDate)))
-            .attr("cy", d => y(d.death))
-            .attr("r", CIRCLE_RADIUS)
-
-
-      d3.selectAll("circle").transition(t).style("fill", "red");
+        .classed('data death', true)
+        .attr("data-state", d => d.state)
+        .attr("cx", d => BAR_WIDTH / 2 + CIRCLE_RADIUS / 2 + x(parseDate(d.rawDate)))
+        .attr("cy", d => y(d.death))
+          .attr("r", CIRCLE_RADIUS)
+          .transition(t)
+          .style("fill", "red")
+      )
 
       // Axes
       const xAxis = g => g
@@ -125,7 +120,17 @@ function App() {
             .text(data.y))
         .classed("yAxis", true)
 
-      if (stateChanged) {
+      svg.selectAll("circle").remove()
+      if (state === DEFAULT_STATE_VALUE) { svg.selectAll("g").remove() }
+      else { data = data.filter(d => d.state === state) }
+
+      // Create scales after filtering data
+      const {x, y} = scales(data, dimensions)
+
+      addDataPoints()
+
+
+      if (state !== DEFAULT_STATE_VALUE) {
         svg.select(".xAxis")
           .transition(t)
           .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
@@ -141,7 +146,6 @@ function App() {
         svg.append("g")
           .call(yAxis)
       }
-
 
 
   })}, [state, data, dimensions])
