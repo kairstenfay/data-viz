@@ -26,7 +26,7 @@ async function getData() {
   return data
 }
 
-async function getTopo() {
+async function getGeojson() {
   return await d3.json("https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json")
 }
 
@@ -79,6 +79,8 @@ function App() {
   const handleClick = (event) => {
     const target = event.target.__data__
     if (target) {
+      console.log(target)
+      console.log(target.id)
       fipsMapper.then(mapper => setState(mapper[target.id].abbreviation))
       // window.scrollTo(0, scatterplotRef.current)
       descriptionRef.current.scrollIntoView({ behavior: "smooth" })
@@ -171,7 +173,7 @@ function App() {
       .translate([mapWidth * .75, mapHeight * .65])
 
     const path = d3.geoPath().projection(projection)
-    const us = getTopo()
+    const us = getGeojson()
 
     us.then(us => {
       svg.selectAll("g").remove()
