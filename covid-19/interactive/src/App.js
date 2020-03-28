@@ -79,9 +79,9 @@ function App() {
   const handleClick = (event) => {
     const target = event.target.__data__
     if (target) {
-      console.log(target)
-      console.log(target.id)
-      fipsMapper.then(mapper => setState(mapper[target.id].abbreviation))
+      // Address known bug with Puerto Rico fips code in mapping data
+      const fips = target.id === '72' ? '43' : target.id
+      fipsMapper.then(mapper => setState(mapper[fips].abbreviation))
       // window.scrollTo(0, scatterplotRef.current)
       descriptionRef.current.scrollIntoView({ behavior: "smooth" })
     }
