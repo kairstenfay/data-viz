@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import "./App.css";
 import * as d3 from "d3";
+import * as topojson from "topojson";
 
 const parseDate = d3.timeParse("%Y%m%d")
 const formatDate = d3.timeFormat("%m-%d")
@@ -22,6 +23,11 @@ async function getData() {
       d['death'] = d.death || 0
       d['total'] = d.total || 0
     })
+  return data
+}
+
+async function getTopo() {
+  const data = await d3.json("https://d3js.org/us-10m.v1.json")
   return data
 }
 
@@ -63,7 +69,8 @@ function App() {
     w: window.innerWidth
   })
 
-  const myRef = useRef()
+  const scatterplotRef = useRef()
+  const mapRef = useRef()
 
   useEffect(() => {
     function handleResize() {
@@ -80,12 +87,13 @@ function App() {
     }
   })
 
+// Render scatterplot
   useEffect(() => {
-    data.then(data => {
+    data.then(data => {  // todo catch error
       setStateList([DEFAULT_STATE_VALUE].concat(
         Array(...new Set(data.map(d => d.state)))))
 
-      const svg = d3.select(myRef.current)
+      const svg = d3.select(scatterplotRef.current)
 
       const addDataPoints = () => (
         svg
@@ -140,6 +148,29 @@ function App() {
   })}, [state, data, dimensions])
 
 
+// Render US States choropleth map
+  useEffect(() => {
+    const svg = d3.select(mapRef.current)
+    const path = d3.geoPath()
+    const us = getTopo()
+    console.log(us)
+
+    us.then(us => {
+      svg.append("g")
+          .classed("states", true)
+        .selectAll("path")
+        .data(topojson.feature(us, us.objects.states).features)
+        .enter().append("path")
+          .attr("d", path);
+
+      svg.append("path")
+          .classed("state-borders", true)
+          .attr("d", path(topojson.mesh(us, us.objects.states,
+              function(a, b) { return a !== b; })));
+    });
+  }, [])
+
+  
   return (
     <div className="App">
       <header className="App-header">
@@ -159,7 +190,9 @@ function App() {
             ))}
         </select>
         <br />
-        <svg ref={myRef} width={dimensions.w} height={dimensions.h}></svg>
+        <svg ref={scatterplotRef} width={dimensions.w} height={dimensions.h}></svg>
+        <br />
+        <svg ref={mapRef} width={dimensions.w} height={dimensions.h}></svg>
       </div>
     </div>
   );
