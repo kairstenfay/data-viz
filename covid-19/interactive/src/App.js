@@ -27,8 +27,11 @@ async function getData() {
 }
 
 async function getTopo() {
-  const data = await d3.json("https://d3js.org/us-10m.v1.json")
-  return data
+  return await d3.json("https://d3js.org/us-10m.v1.json")
+}
+
+async function getMapper() {
+  return await d3.json('https://gist.githubusercontent.com/mbejda/4c62c7d64af5556b355a67d09cd3bf34/raw/d4ceb79eba71931e9d9fe43eb91eedd78f4fcc61/states_by_fips.json')
 }
 
 
@@ -61,6 +64,7 @@ const t = d3.transition()
 
 function App() {
   const [data] = useState(getData())
+  const [fipsMapper] = useState(getMapper())
   // confusingly named 'state', but I mean U.S. state
   const [state, setState] = useState(DEFAULT_STATE_VALUE)
   const [stateList, setStateList] = useState([DEFAULT_STATE_VALUE])
@@ -161,16 +165,16 @@ function App() {
         .selectAll("path")
         .data(topojson.feature(us, us.objects.states).features)
         .enter().append("path")
-          .attr("d", path);
+          .attr("d", path)
+          .attr("state-fips", (d, i) => us.objects.states.geometries[i].id)
 
       svg.append("path")
           .classed("state-borders", true)
           .attr("d", path(topojson.mesh(us, us.objects.states,
               function(a, b) { return a !== b; })));
     });
-  }, [])
+  }, [dimensions])
 
-  
   return (
     <div className="App">
       <header className="App-header">
@@ -192,7 +196,16 @@ function App() {
         <br />
         <svg ref={scatterplotRef} width={dimensions.w} height={dimensions.h}></svg>
         <br />
-        <svg ref={mapRef} width={dimensions.w} height={dimensions.h}></svg>
+        <svg ref={mapRef} width={dimensions.w} height={dimensions.h}
+          onClick={(event) => {
+            const target = event.target.__data__
+            if (target) {
+              fipsMapper.then(mapper => {
+                console.log(target.id)
+                console.log(mapper[target.id].abbreviation)
+              })
+            }
+          }}></svg>
       </div>
     </div>
   );
