@@ -27,7 +27,8 @@ async function getData() {
 }
 
 async function getTopo() {
-  return await d3.json("https://d3js.org/us-10m.v1.json")
+  // return await d3.json("https://d3js.org/us-10m.v1.json")
+  return await d3.json("https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json")
 }
 
 async function getMapper() {
@@ -161,8 +162,16 @@ function App() {
 
 // Render US States choropleth map
   useEffect(() => {
+    const mapRatio = 0.5
+    const mapHeight = dimensions.w * mapRatio
+
     const svg = d3.select(mapRef.current)
-    const path = d3.geoPath()
+    const projection = d3.geoAlbers()
+      .scale(dimensions.w / 2)
+      .translate([dimensions.w / 2, mapHeight / 2])
+
+    const path = d3.geoPath().projection(projection)
+
     const us = getTopo()
     console.log(us)
 
@@ -170,15 +179,16 @@ function App() {
       svg.append("g")
           .classed("states", true)
         .selectAll("path")
-        .data(topojson.feature(us, us.objects.states).features)
+        .data(us.features)
         .enter().append("path")
           .attr("d", path)
-          .attr("state-fips", (d, i) => us.objects.states.geometries[i].id)
+          // .attr("state-fips", (d, i) => us.objects.states.geometries[i].id)
 
       svg.append("path")
           .classed("state-borders", true)
-          .attr("d", path(topojson.mesh(us, us.objects.states,
-              function(a, b) { return a !== b; })));
+          .attr("d", path)
+          .style('width', dimensions.w + 'px')
+          .style('height', dimensions.h + 'px')
     });
   }, [dimensions])
 
@@ -204,10 +214,10 @@ function App() {
             ))}
         </select>
         <br />
-        <svg ref={scatterplotRef} width={dimensions.w} height={dimensions.h}></svg>
-        <br />
         <svg ref={mapRef} width={dimensions.w} height={dimensions.h}
           onClick={handleClick}></svg>
+        <br />
+        <svg ref={scatterplotRef} width={dimensions.w} height={dimensions.h}></svg>
       </div>
     </div>
   );
