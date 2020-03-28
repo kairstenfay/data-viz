@@ -120,32 +120,21 @@ function App() {
             .text(data.y))
         .classed("yAxis", true)
 
-      svg.selectAll("circle").remove()
-      if (state === DEFAULT_STATE_VALUE) { svg.selectAll("g").remove() }
-      else { data = data.filter(d => d.state === state) }
+      if (state !== DEFAULT_STATE_VALUE) data = data.filter(d => d.state === state)
 
       // Create scales after filtering data
       const {x, y} = scales(data, dimensions)
 
+      svg.selectAll("circle").remove()
+      svg.selectAll("g").remove()
+
       addDataPoints()
 
+      svg.append("g")
+        .call(xAxis)
 
-      if (state !== DEFAULT_STATE_VALUE) {
-        svg.select(".xAxis")
-          .transition(t)
-          .call(d3.axisBottom(x).tickFormat(i => formatDate(i)).tickSizeOuter(0))
-
-        svg.select(".yAxis")
-          .transition(t)
-          .call(d3.axisLeft(y))
-
-      } else {
-        svg.append("g")
-          .call(xAxis)
-
-        svg.append("g")
-          .call(yAxis)
-      }
+      svg.append("g")
+        .call(yAxis)
 
 
   })}, [state, data, dimensions])
