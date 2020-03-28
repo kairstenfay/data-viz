@@ -33,6 +33,10 @@
   fill: #374649;
 }
 
+.states {
+  fill: #374649;
+}
+
 .states :hover {
   fill: red;
 }

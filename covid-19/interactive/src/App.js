@@ -35,7 +35,6 @@ async function getMapper() {
   return await d3.json('https://gist.githubusercontent.com/mbejda/4c62c7d64af5556b355a67d09cd3bf34/raw/d4ceb79eba71931e9d9fe43eb91eedd78f4fcc61/states_by_fips.json')
 }
 
-
 /**
  *
  * @param {*} data
@@ -81,9 +80,10 @@ function App() {
     const target = event.target.__data__
     if (target) {
       fipsMapper.then(mapper => setState(mapper[target.id].abbreviation))
+      // window.scrollTo(0, scatterplotRef.current)
     }
   }
-  
+
   useEffect(() => {
     function handleResize() {
       setDimensions({
@@ -155,25 +155,23 @@ function App() {
 
       svg.append("g")
         .call(yAxis)
-
-
   })}, [state, data, dimensions])
 
 
 // Render US States choropleth map
   useEffect(() => {
-    const mapRatio = 0.5
+    const mapRatio = .5
+    const mapWidth = dimensions.w / 2
     const mapHeight = dimensions.w * mapRatio
 
     const svg = d3.select(mapRef.current)
+
     const projection = d3.geoAlbers()
-      .scale(dimensions.w / 2)
-      .translate([dimensions.w / 2, mapHeight / 2])
+      .scale(mapWidth / 2)
+      .translate([mapWidth / 2, mapHeight / 2])
 
     const path = d3.geoPath().projection(projection)
-
     const us = getTopo()
-    console.log(us)
 
     us.then(us => {
       svg.selectAll("g").remove()
@@ -194,6 +192,7 @@ function App() {
     })
 
   }, [dimensions])
+
 
   return (
     <div className="App">
@@ -217,7 +216,7 @@ function App() {
             ))}
         </select>
         <br />
-        <svg ref={mapRef} width={dimensions.w} height={dimensions.h}
+        <svg ref={mapRef} width={dimensions.w / 2} height={dimensions.h}
           onClick={handleClick}></svg>
         <br />
         <svg ref={scatterplotRef} width={dimensions.w} height={dimensions.h}></svg>
