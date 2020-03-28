@@ -191,9 +191,12 @@ function App() {
         </p>
       </header>
       <p id="rotate-device">Please rotate your device</p>
+      <p>
+        { state === DEFAULT_STATE_VALUE ? "Select a state" : state }
+      </p>
       <div id="data-viz">
         <select id="state-selector"
-          defaultValue={stateList[0]}
+          value={state}
           onChange={(e) => setState(e.target.value)}>
 
           {stateList.map(state => (
