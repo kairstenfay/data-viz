@@ -202,15 +202,37 @@ function App() {
 
   }, [dimensions])
 
+  const Header = () => (
+    <header className="App-header">
+      <p>
+        COVID-19 Deaths<br />
+        U.S. States and Territories
+      </p>
+    </header>
+  )
+
+  const Selector = () => (
+    <select id="state-selector"
+      value={state}
+      onChange={(e) => setState(e.target.value)}>
+
+      {stateList.map(state => (
+        <option key={state} value={state}>{state}</option>
+        ))}
+    </select>
+  )
+
+  const VizTitle = () => (
+    <p ref={descriptionRef}>
+      { state === DEFAULT_STATE_VALUE
+        ? "Viewing all states"
+        : `Currently viewing ${state}` }
+    </p>
+  )
 
   return (
     <div className="App">
-      <header className="App-header">
-        <p>
-          COVID-19 Deaths<br />
-          U.S. States and Territories
-        </p>
-      </header>
+      <Header />
 
       <p id="rotate-device">Please rotate your device</p>
 
@@ -218,14 +240,7 @@ function App() {
         <p>
           Select a state from the map or the dropdown below.
           <br />
-          <select id="state-selector"
-            value={state}
-            onChange={(e) => setState(e.target.value)}>
-
-            {stateList.map(state => (
-              <option key={state} value={state}>{state}</option>
-              ))}
-          </select>
+          <Selector />
         </p>
         <svg
           ref={mapRef} width={dimensions.w} height={dimensions.w / 2}
@@ -234,11 +249,7 @@ function App() {
       </div>
 
       <div id="data-viz">
-        <p ref={descriptionRef}>
-          { state === DEFAULT_STATE_VALUE
-              ? "Viewing all states"
-              : `Currently viewing ${state}` }
-        </p>
+        <VizTitle />
         <svg ref={scatterplotRef} width={dimensions.w} height={dimensions.h}></svg>
       </div>
     </div>
