@@ -176,6 +176,8 @@ function App() {
     console.log(us)
 
     us.then(us => {
+      svg.selectAll("g").remove()
+
       svg.append("g")
           .classed("states", true)
         .selectAll("path")
@@ -189,7 +191,8 @@ function App() {
           .attr("d", path)
           .style('width', dimensions.w + 'px')
           .style('height', dimensions.h + 'px')
-    });
+    })
+
   }, [dimensions])
 
   return (
