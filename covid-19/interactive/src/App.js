@@ -12,6 +12,7 @@ const MAP_RATIO = 0.5
 
 async function getData() {
   const data = await d3.json("https://covidtracking.com/api/states/daily")
+
   data.forEach(d => {
       // Preserve raw date string
       d['rawDate'] = d.date
@@ -30,9 +31,13 @@ async function getGeojson() {
   return await d3.json("https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json")
 }
 
-async function getMapper() {
+async function getFipsMapper() {
   return await d3.json('https://gist.githubusercontent.com/mbejda/4c62c7d64af5556b355a67d09cd3bf34/raw/d4ceb79eba71931e9d9fe43eb91eedd78f4fcc61/states_by_fips.json')
 }
+
+// async function getAbbrevMapper() {
+//   return await d3.json('https://gist.github.com/mshafrir/2646763#file-states_hash-json')
+// }
 
 /**
  *
@@ -63,12 +68,14 @@ const t = d3.transition()
 
 function App() {
   const [data] = useState(getData())
-  const [fipsMapper] = useState(getMapper())
+  const [fipsMapper] = useState(getFipsMapper())
+  // const [abbrevMapper] = useState(getAbbrevMapper())
+
   // confusingly named 'state', but I mean U.S. state
   const [state, setState] = useState(DEFAULT_STATE_VALUE)
   const [stateList, setStateList] = useState([DEFAULT_STATE_VALUE])
   const [dimensions, setDimensions] = useState({
-    h: window.innerWidth / 2.5,
+    h: window.innerWidth / 2,
     w: window.innerWidth
   })
 
@@ -228,7 +235,9 @@ function App() {
 
       <div id="data-viz">
         <p ref={descriptionRef}>
-          { state === DEFAULT_STATE_VALUE ? "Select a state" : `Currently viewing ${state}` }
+          { state === DEFAULT_STATE_VALUE
+              ? "Viewing all states"
+              : `Currently viewing ${state}` }
         </p>
         <svg ref={scatterplotRef} width={dimensions.w} height={dimensions.h}></svg>
       </div>
