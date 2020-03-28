@@ -1,14 +1,14 @@
 import React, { useRef, useEffect, useState } from "react";
 import "./App.css";
 import * as d3 from "d3";
-import * as topojson from "topojson";
 
 const parseDate = d3.timeParse("%Y%m%d")
 const formatDate = d3.timeFormat("%m-%d")
-const margin = ({top: 30, right: 40, bottom: 30, left: 40})
+const margin = ({top: 80, right: 80, bottom: 80, left: 80})
 const BAR_WIDTH = 10  // todo programmatically determine width
 const CIRCLE_RADIUS = 3  // todo programatically determine radius
 const DEFAULT_STATE_VALUE = 'select'
+const MAP_RATIO = 0.5
 
 async function getData() {
   const data = await d3.json("https://covidtracking.com/api/states/daily")
@@ -27,7 +27,6 @@ async function getData() {
 }
 
 async function getTopo() {
-  // return await d3.json("https://d3js.org/us-10m.v1.json")
   return await d3.json("https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json")
 }
 
@@ -75,12 +74,14 @@ function App() {
 
   const scatterplotRef = useRef()
   const mapRef = useRef()
+  const descriptionRef = useRef()
 
   const handleClick = (event) => {
     const target = event.target.__data__
     if (target) {
       fipsMapper.then(mapper => setState(mapper[target.id].abbreviation))
       // window.scrollTo(0, scatterplotRef.current)
+      descriptionRef.current.scrollIntoView({ behavior: "smooth" })
     }
   }
 
@@ -160,15 +161,14 @@ function App() {
 
 // Render US States choropleth map
   useEffect(() => {
-    const mapRatio = .5
     const mapWidth = dimensions.w / 2
-    const mapHeight = dimensions.w * mapRatio
+    const mapHeight = dimensions.w * MAP_RATIO
 
     const svg = d3.select(mapRef.current)
 
     const projection = d3.geoAlbers()
-      .scale(mapWidth / 2)
-      .translate([mapWidth / 2, mapHeight / 2])
+      .scale(mapWidth * .75)
+      .translate([mapWidth * .75, mapHeight * .65])
 
     const path = d3.geoPath().projection(projection)
     const us = getTopo()
@@ -202,23 +202,32 @@ function App() {
           U.S. States and Territories
         </p>
       </header>
-      <p id="rotate-device">Please rotate your device</p>
-      <p>
-        { state === DEFAULT_STATE_VALUE ? "Select a state" : state }
-      </p>
-      <div id="data-viz">
-        <select id="state-selector"
-          value={state}
-          onChange={(e) => setState(e.target.value)}>
 
-          {stateList.map(state => (
-            <option key={state} value={state}>{state}</option>
-            ))}
-        </select>
+      <p id="rotate-device">Please rotate your device</p>
+
+      <div id="viz-controls">
+        <p>
+          Select a state from the map or the dropdown below.
+          <br />
+          <select id="state-selector"
+            value={state}
+            onChange={(e) => setState(e.target.value)}>
+
+            {stateList.map(state => (
+              <option key={state} value={state}>{state}</option>
+              ))}
+          </select>
+        </p>
+        <svg
+          ref={mapRef} width={dimensions.w} height={dimensions.w / 2}
+          onClick={handleClick} />
         <br />
-        <svg ref={mapRef} width={dimensions.w / 2} height={dimensions.h}
-          onClick={handleClick}></svg>
-        <br />
+      </div>
+
+      <div id="data-viz">
+        <p ref={descriptionRef}>
+          { state === DEFAULT_STATE_VALUE ? "Select a state" : `Currently viewing ${state}` }
+        </p>
         <svg ref={scatterplotRef} width={dimensions.w} height={dimensions.h}></svg>
       </div>
     </div>
