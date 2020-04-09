@@ -53,21 +53,22 @@
 
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script>
-    width = 400;
-    height = 300;
-    margin = ({top: 30, right: 50, bottom: 30, left: 50})
+    const width = 400;
+    const height = 300;
+    const margin = ({top: 30, right: 50, bottom: 30, left: 50})
 
     d3.csv("bp.csv").then(function(data) {
         console.table(data)
 
         // Scales
-        x = d3.scaleTime()
+        const x = d3.scaleTime()
         .domain([new Date(2019, 8, 24), new Date()])
         .range([margin.left, width - margin.right])
 
-        y = d3.scaleLinear()
+        const y = d3.scaleLinear()
         .domain([d3.min(data, d => d.diastolic), d3.max(data, d => d.systolic)]).nice()
         .range([height - margin.bottom, margin.top])
+
 
         // Axes
         xAxis = g => g
