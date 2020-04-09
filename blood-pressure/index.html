@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<style>
+    body {
+        margin: 0 auto;
+        width: 90%;
+        font-family: sans-serif;
+        font-size: calc(10px + 1vmin);
+        display: flex;
+        flex-direction: column;
+        place-items: center;
+    }
+
+    h1 {
+        font-size: calc(12px + 2vmin);
+    }
+
+    h2 {
+        font-size: calc(10px + 2vmin);
+    }
+
+    svg {
+        max-width: 800px;
+    }
+
+    circle {
+        opacity: 0.7
+    }
+
+</style>
+
+<body>
+    <header>
+        <title>Blood pressure readings</title>
+        <h1>Blood Pressure Readings Over Time</h1>
+    </header>
+    <fieldset>
+        <legend>Legend</legend>
+        <svg width="15px" height="15px">
+            <circle cx=5 cy=7 r=5 fill="teal"></circle>
+        </svg>
+        Normal blood pressure (systolic <140 mmHg and diastolic <90 mmHg)
+        <br>
+        <svg width="15px" height="15px">
+            <circle cx=5 cy=7 r=5 fill="magenta"></circle>
+        </svg>
+        High blood pressure (systolic >=140 mmHg or diastolic >=90 mmHg)
+    </fieldset>
+</body>
+
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script>
+    width = 400;
+    height = 300;
+    margin = ({top: 30, right: 50, bottom: 30, left: 50})
+
+    d3.csv("bp.csv").then(function(data) {
+        console.table(data)
+
+        // Scales
+        x = d3.scaleTime()
+        .domain([new Date(2019, 8, 24), new Date()])
+        .range([margin.left, width - margin.right])
+
+        y = d3.scaleLinear()
+        .domain([d3.min(data, d => d.diastolic), d3.max(data, d => d.systolic)]).nice()
+        .range([height - margin.bottom, margin.top])
+
+        // Axes
+        xAxis = g => g
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%b")))
+
+        yAxis = g => g
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y))
+        .call(g => g.select(".domain").remove())
+        .call(g => g.append("text")
+            .attr("x", -margin.left)
+            .attr("y", 10)
+            .attr("fill", "currentColor")
+            .attr("text-anchor", "start")
+            .text(data.y))
+
+        const svg = d3.selectAll("body").append("svg")
+        .attr("viewBox", [0, 0, width, height]);
+
+        svg.append("g")
+        .selectAll("circle")
+        .data(data)
+        .join("circle")
+        .attr("date", d => d.date)
+        .attr("cx", d => x(new Date(d.date)))
+        .attr("cy", d => y(d.systolic))
+        .attr("r", d => 3)
+        .attr("fill", d =>
+            (d.systolic >= 140 || d.diastolic >= 90) ? "magenta" : "teal"
+        )
+
+        svg.append("g")
+        .attr("fill", "purple")
+        .selectAll("circle")
+        .data(data)
+        .join("circle")
+        .attr("date", d => d.date)
+        .attr("cx", d => x(new Date(d.date)))
+        .attr("cy", d => y(d.diastolic))
+        .attr("r", d => 3)
+        .attr("fill", d =>
+            (d.systolic > 140 || d.diastolic > 90) ? "magenta" : "teal"
+        )
+
+        svg.append("g")
+        .call(xAxis);
+
+        svg.append("g")
+        .call(yAxis);
+
+    }).catch(function(error) {
+        console.log(error)
+    })
+</script>
