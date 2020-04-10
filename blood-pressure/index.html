@@ -30,6 +30,10 @@
         opacity: 0.7
     }
 
+    .shader {
+        opacity: 0.002
+    }
+
 </style>
 
 <body>
@@ -130,6 +134,18 @@
         .attr("fill", d =>
             (d.systolic > 140 || d.diastolic > 90) ? "magenta" : "teal"
         )
+
+        // Background fill
+        svg.append("g")
+        .selectAll("rect")
+        .data(data)
+        .join("rect")
+        .attr("x", 0 + margin.left)
+        .attr("y", y(90))
+        .attr("height", height - y(90) - margin.bottom)
+        .attr("width", width - margin.left - margin.right)
+        .attr("fill", "teal")
+        .classed("shader", true)
 
         svg.append("g")
         .call(xAxis);
