@@ -26,7 +26,7 @@
         max-width: 800px;
     }
 
-    circle {
+    circle, rect {
         opacity: 0.7
     }
 
@@ -40,10 +40,23 @@
     <fieldset>
         <legend>Legend</legend>
         <svg width="15px" height="15px">
+            <circle cx=5 cy=7 r=5 fill="grey"></circle>
+        </svg>
+        Systolic blood pressure
+        <br>
+
+        <svg width="15px" height="15px">
+            <rect x=0 y=3 height=10 width=10 fill="grey"></circle>
+        </svg>
+        Diastolic blood pressure
+        <br>
+
+        <svg width="15px" height="15px">
             <circle cx=5 cy=7 r=5 fill="teal"></circle>
         </svg>
         Normal blood pressure (systolic <140 mmHg and diastolic <90 mmHg)
         <br>
+
         <svg width="15px" height="15px">
             <circle cx=5 cy=7 r=5 fill="magenta"></circle>
         </svg>
@@ -56,6 +69,7 @@
     const width = 400;
     const height = 300;
     const margin = ({top: 30, right: 50, bottom: 30, left: 50})
+    const squareEdge = 6
 
     d3.csv("bp.csv").then(function(data) {
         console.table(data)
@@ -93,23 +107,26 @@
         .selectAll("circle")
         .data(data)
         .join("circle")
-        .attr("date", d => d.date)
+        .attr("data-date", d => d.date)
+        .attr("data-systolic", d => d.systolic)
         .attr("cx", d => x(new Date(d.date)))
         .attr("cy", d => y(d.systolic))
-        .attr("r", d => 3)
+        .attr("r", d => squareEdge/2)
         .attr("fill", d =>
             (d.systolic >= 140 || d.diastolic >= 90) ? "magenta" : "teal"
         )
 
         svg.append("g")
         .attr("fill", "purple")
-        .selectAll("circle")
+        .selectAll("rect")
         .data(data)
-        .join("circle")
-        .attr("date", d => d.date)
-        .attr("cx", d => x(new Date(d.date)))
-        .attr("cy", d => y(d.diastolic))
-        .attr("r", d => 3)
+        .join("rect")
+        .attr("data-date", d => d.date)
+        .attr("data-diastolic", d => d.diastolic)
+        .attr("x", d => x(new Date(d.date)) - squareEdge/2)
+        .attr("y", d => y(d.diastolic) - squareEdge/2)
+        .attr("height", squareEdge)
+        .attr("width", squareEdge)
         .attr("fill", d =>
             (d.systolic > 140 || d.diastolic > 90) ? "magenta" : "teal"
         )
