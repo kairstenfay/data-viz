@@ -1,0 +1,33 @@
+body {
+	height: 100vh;
+    background: ghostwhite;
+    display: grid;
+    place-items: center;
+    font-family: sans-serif;
+}
+
+svg, canvas {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+pre {
+    padding: 10px;
+    border-radius: 10px;
+}
+
+h1, h2, h3 {
+    margin: 0 auto;
+    color: rgb(44, 44, 255)
+}
+
+.card {
+    background-color: white;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    padding: 25px;
+    width: 80%;
+    display: grid;
+    place-items: center;
+    margin: 25px;
+}

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8" name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<head>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<script src="https://threejs.org/build/three.min.js"></script>
+	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<link rel="stylesheet"
+	href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.0/styles/default.min.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.0/highlight.min.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+
+	<h1>Animation on the Web</h1>
+	<p>December 1, 2020</p>
+	<div class="card">
+		<h2>SVG</h2>
+		<ul>
+			<li>declarative</li>
+			<li>vector art (e.g. logos)</li>
+			<li>native HTML element (requires no JavaScript)</li>
+			<li>flexible and responsive</li>
+			<li>lives in the DOM (can use DOM elements like <code>click</code> and <code>mouseDown</code>, etc.</li>
+			<li>good for accessibility (can have text alternative)</li>
+			<li>produces crisp text elements, unlike Canvas</li>
+		</ul>
+		<pre><code>
+&lt;svg viewBox="0 0 100 100" height="200" width="500"&gt;
+	&lt;circle cx="50" cy="50" r="25" fill="green" /&gt;
+&lt;/svg&gt;
+		</code></pre>
+		<svg viewBox="0 0 100 100" height="200" width="500">
+			<circle cx="50" cy="50" r="25" fill="green" />
+		</svg>
+	</div>
+
+	<div class="card">
+
+		<h2>Canvas</h2>
+		<ul>
+			<li>requires drawing in JavaScript</li>
+			<li>more imperative than declarative (issue commands to tell it how to draw or animate)</li>
+			<li>excellent at making pixels "dance!"</li>
+			<li>highly interactive and can handle lots of complex detail</li>
+			<li>animation performance is much better than SVG</li>
+		</ul>
+		<pre><code>
+&lt;canvas id="myCanvas" height="200" width="500"&gt;&lt;/canvas&gt;
+&lt;script&gt;
+	const canvas = document.getElementById('myCanvas');
+	const context = canvas.getContext('2d');
+	const centerX = canvas.width / 2;
+	const centerY = canvas.height / 2;
+	const radius = 50;
+	context.beginPath();
+	context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+	context.fillStyle = 'green';
+	context.fill();
+&lt;/script&gt;
+		</code></pre>
+		<canvas id="myCanvas" height="200" width="500"></canvas>
+		<script>
+		  const canvas = document.getElementById('myCanvas');
+		  const context = canvas.getContext('2d');
+		  const centerX = canvas.width / 2;
+		  const centerY = canvas.height / 2;
+		  const radius = 50;
+
+		  context.beginPath();
+		  context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+		  context.fillStyle = 'green';
+		  context.fill();
+		</script>
+
+		<h3>WebGL</h3>
+		<ul>
+			<li>extremely complex but simplified with THREE.js</li>
+			<li>3D modeling</li>
+			<li>camera controls</li>
+			<li>light controls</li>
+		</ul>
+		<pre><code>
+renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setClearColor(new THREE.Color('white'), 1)
+renderer.setSize( WIDTH, HEIGHT );
+const container = document.getElementById('container');
+container.appendChild( renderer.domElement );
+
+scene = new THREE.Scene();
+camera = new THREE.PerspectiveCamera(45, ASPECT, 0.01, 1000);
+camera.position.y = 1;
+camera.position.z = 2;
+const controls = new THREE.OrbitControls(camera, renderer.domElement)
+
+// White directional light at half intensity shining from the top.
+const directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
+scene.add( directionalLight );
+
+// add sphere
+const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+const material = new THREE.MeshStandardMaterial( {
+	color: "green",
+	metalness: 0,
+	roughness: 1,
+} );
+const mesh = new THREE.Mesh( geometry, material );
+scene.add( mesh );
+		</code></pre>
+		<div id="container"></div>
+		<script src="index.js"></script>
+	</div>
+
+	<div class="card">
+		<h2>So what should I choose?</h2>
+		<blockquote class="twitter-tweet">
+			<p lang="en" dir="ltr">
+				One extremely basic way to answer it is &quot;use canvas when you cannot use svg&quot; (where &quot;cannot&quot; might mean animating thousands of objects, manipulating each pixel individually, etc.). To put it another way, SVG should be your default choice, canvas your backup plan.
+			</p>
+			&mdash; Benjamin De Cock (@bdc) <a href="https://twitter.com/bdc/status/1179509488803434496?ref_src=twsrc%5Etfw">October 2, 2019</a>
+		</blockquote>
+		<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+	</div>
+
+	<div class="card">
+		<h2>SVG Bar Chart</h2>
+		<p>
+			For the following examples, we'll use the data encoded here:
+		</p>
+
+		<script>
+			const data = [ 16, 68, 20, 30, 54 ];
+			const dimensions = 500;
+			const labels = ["JAN", "FEB", "MAR", "APR", "MAY"];
+		</script>
+		<pre><code>
+const data = [ 16, 68, 20, 30, 54 ];
+const dimensions = 500;
+const labels = ["JAN", "FEB", "MAR", "APR", "MAY"];
+		</code></pre>
+
+		<p>
+			We create an SVG bar chart with a little help from D3.
+		</p>
+
+		<pre><code>
+&lt;div id="d3div"&gt;&lt;/div&gt;
+&lt;script src="//d3js.org/d3.v4.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+const padding = 50;
+const barPadding = 0.4;
+
+const svg = d3.select("#d3div")
+	.append("svg")
+	.attr("width", dimensions)
+	.attr("height", dimensions);
+
+// Create a separate ordinal scale for our custom labels
+const xLabels = d3.scaleBand()
+	.domain(labels)
+	.range([0, dimensions - padding])
+	.padding(barPadding);
+
+const x = d3.scaleBand()
+	.domain(d3.range(data.length))
+	.range([0, dimensions - padding])
+	.padding(barPadding);
+
+const y = d3.scaleLinear()
+	.domain([0, 116])
+	.range([dimensions - padding, 0]);
+
+// bar chart
+svg.selectAll("rect")
+	.data(data)
+	.enter()
+	.append("rect")
+	.attr("x", (d, i) => x(i))
+	.attr("y", d => y(d))
+	.attr("width", x.bandwidth())
+	.attr("height", d => dimensions - padding - y(d))
+	.attr("fill", () =&gt; "blue");
+
+// add the x Axis
+svg.append("g")
+	.attr("transform", `translate(0, ${dimensions - padding})`)
+	.call(d3.axisBottom(xLabels));
+
+// add the y Axis
+svg.append("g")
+	.attr("transform", `translate(${padding / 2}, 0)`)
+	.call(d3.axisLeft(y));
+&lt;/script&gt;
+		</code></pre>
+
+		<div id="d3div"></div>
+		<script src="//d3js.org/d3.v4.min.js"></script>
+		<script>
+		const padding = 50;
+		const barPadding = 0.4;
+
+		const svg = d3.select("#d3div")
+					.append("svg")
+					.attr("width", dimensions)
+					.attr("height", dimensions);
+
+		// Create a separate ordinal scale for our custom labels
+		const xLabels = d3.scaleBand()
+					.domain(labels)
+					.range([0, dimensions - padding])
+					.padding(barPadding);
+
+		const x = d3.scaleBand()
+					.domain(d3.range(data.length))
+					.range([0, dimensions - padding])
+					.padding(barPadding);
+
+		const y = d3.scaleLinear()
+					.domain([0, 116])
+					.range([dimensions - padding, 0]);
+
+		// bar chart
+		svg.selectAll("rect")
+			.data(data)
+			.enter()
+			.append("rect")
+			.attr("x", (d, i) => x(i))
+			.attr("y", d => y(d))
+			.attr("width", x.bandwidth())
+			.attr("height", d => dimensions - padding - y(d))
+			.attr("fill", () => "blue");
+
+		// add the x Axis
+		svg.append("g")
+			.attr("transform", `translate(0, ${dimensions - padding})`)
+			.call(d3.axisBottom(xLabels));
+
+		// add the y Axis
+		svg.append("g")
+			.attr("transform", `translate(${padding / 2}, 0)`)
+			.call(d3.axisLeft(y));
+		</script>
+	</div>
+
+	<div class="card">
+		<h2>Canvas Bar Chart</h2>
+		<p>
+			Continuing with the same data from above, we create a <code>&lt;canvas&gt;</code> bar chart with the following code.
+		</p>
+
+		<pre><code>
+&lt;canvas width="500" height="500" id="canvas-bar-chart"&gt;&lt;/canvas&gt;
+&lt;script&gt;
+  // get a reference to the canvas
+  const barChartCanvas = document.getElementById('canvas-bar-chart');
+
+  // get a reference to the drawing context
+  // bcc = 'bar chart context'
+  const bcc = barChartCanvas.getContext('2d');
+
+  // draw
+  bcc.fillStyle = "white";
+  bcc.fillRect(0, 0, dimensions, dimensions);
+
+  // draw data
+  bcc.fillStyle = "blue";
+  for (let i = 0; i &lt; data.length; i++) {
+  	const value = data[i];
+  	const barHeight = value * 5;
+  	bcc.fillRect(40 + (i * 100), dimensions - barHeight - 40,
+  		50, barHeight);
+  }
+
+  //draw axis lines
+  bcc.fillStyle = "black";
+  bcc.lineWidth = 2.0;
+  bcc.beginPath();
+  bcc.moveTo(30,10);
+  bcc.lineTo(30,460);
+  bcc.lineTo(490,460);
+  bcc.stroke();
+
+  // draw text and vertical lines
+  bcc.fillStyle = "black";
+  for (let i = 0; i &lt; 6; i++) {
+  	bcc.fillText((5-i)*20 + "",4, i * 80 + 60);
+  	bcc.beginPath();
+  	bcc.moveTo(25,i*80+60);
+  	bcc.lineTo(30,i*80+60);
+  	bcc.stroke();
+  }
+
+  //draw horiz text
+  for (let i = 0; i &lt; labels.length; i++) {
+  	bcc.fillText(labels[i], 50 + (i * 100), 475);
+  }
+&lt;/script&gt;
+		</code></pre>
+		<canvas width="500" height="500" id="canvas-bar-chart"></canvas>
+		<script>
+			// get a reference to the canvas
+			const barChartCanvas = document.getElementById('canvas-bar-chart');
+			// get a reference to the drawing context
+			// bcc = 'bar chart context'
+			const bcc = barChartCanvas.getContext('2d');
+			// draw
+			bcc.fillStyle = "white";
+			bcc.fillRect(0, 0, dimensions, dimensions);
+
+			// draw data
+			bcc.fillStyle = "blue";
+			for (let i = 0; i < data.length; i++) {
+				const value = data[i];
+				const barHeight = value * 5;
+				bcc.fillRect(40 + (i * 100), dimensions - barHeight - 40, 50, barHeight);
+			}
+
+			//draw axis lines
+			bcc.fillStyle = "black";
+			bcc.lineWidth = 2.0;
+			bcc.beginPath();
+			bcc.moveTo(30,10);
+			bcc.lineTo(30,460);
+			bcc.lineTo(490,460);
+			bcc.stroke();
+
+			// draw text and vertical lines
+			bcc.fillStyle = "black";
+			for (let i = 0; i < 6; i++) {
+				bcc.fillText((5-i)*20 + "",4, i * 80 + 60);
+				bcc.beginPath();
+				bcc.moveTo(25,i*80+60);
+				bcc.lineTo(30,i*80+60);
+				bcc.stroke();
+			}
+
+			//draw horiz text
+			for (let i = 0; i < labels.length; i++) {
+				bcc.fillText(labels[i], 50 + (i * 100), 475);
+			}
+		</script>
+	</div>
+
+</body>
+<footer>
+	<h3>Sources</h3>
+	<ul>
+		<li>
+			<a href="https://css-tricks.com/when-to-use-svg-vs-when-to-use-canvas/" target="_blank">
+				CSS Tricks
+			</a>
+		</li>
+		<li>
+			<a href="https://joshondesign.com/p/books/canvasdeepdive/chapter02.html" target="_blank">HTML Canvas Deep Dive
+			</a>
+		</li>
+	</ul>
+</footer>
+</html>
