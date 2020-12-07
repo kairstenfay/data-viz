@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Job Interview Sankey</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+
+  <!-- code adapted from https://www.d3-graph-gallery.com/graph/sankey_basic.html -->
+
+  <body>
+    <h1>My 2020 Software Engineer Job Hunt</h1>
+    <p>
+      A story of 32 job applications by <a href="https://github.com/kairstenfay">Kairsten Fay</a>.
+    </p>
+    <p>
+      Hover over a node for more details (not supported on mobile).
+    </p>
+    <p>
+      Drag the nodes vertically to rearrange.
+    </p>
+    <div id="my_dataviz"></div>
+
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://unpkg.com/d3-array@1"></script>
+    <script src="https://unpkg.com/d3-collection@1"></script>
+    <script src="https://unpkg.com/d3-path@1"></script>
+    <script src="https://unpkg.com/d3-shape@1"></script>
+    <script src="https://unpkg.com/d3-sankey@0"></script>
+    <script src="sankey.js"></script>
+
+    <script>
+        // set the dimensions and margins of the graph
+        var margin = {top: 10, right: 10, bottom: 10, left: 10},
+            width = Math.min(1100, window.innerWidth - 2 * margin.left - 2 * margin.right),
+            height = Math.min(600, window.innerHeight - 2 * margin.top - 2 * margin.bottom);
+
+        // append the svg object to the body of the page
+        var svg = d3.select("#my_dataviz").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+            .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+
+        // Color scale used
+        const color = name => {
+          let color;
+
+          if (name == 'Rejected') {
+            color = '#fc6042';
+          } else if (name.startsWith('Withdrew')) {
+            color = '#eee657';
+          } else if (['No response', 'Ghosted', 'Pending'].includes(name)) {
+            color = 'grey';
+          } else {
+            color = '#2cc990';
+          }
+
+          return color;
+        }
+
+        // Set the sankey diagram properties
+        var sankey = d3.sankey()
+            .nodeWidth(width/height * 20)
+            .nodePadding(width/height * 60)
+            .align('left')
+            .size([width, height]);
+
+        const path = sankey.link()
+
+        // load the data
+        d3.json("./data/data.json", function(error, graph) {
+          // Constructs a new Sankey generator with the default settings.
+          sankey
+              .nodes(graph.nodes)
+              .links(graph.links)
+              .layout(32);
+
+          // add in the links
+          var link = svg.append("g")
+            .selectAll(".link")
+            .data(graph.links)
+            .enter()
+            .append("path")
+              .attr("class", "link")
+              .attr("d", sankey.link() )
+              .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+              .sort((a, b) => b.dy - a.dy);
+
+          // add in the nodes
+          var node = svg.append("g")
+            .selectAll(".node")
+            .data(graph.nodes)
+            .enter().append("g")
+              .attr("class", "node")
+              .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+              .call(d3.drag()
+                .subject(d => d)
+                .on("start", () => this.parentNode.appendChild(this))
+                .on("drag", dragmove));
+
+          // add the rectangles for the nodes
+          node
+            .append("rect")
+              .attr("height", d => d.dy)
+              .attr("width", sankey.nodeWidth())
+              .style("fill", d => d.color = color(d.name))
+              .style("stroke", d => d3.rgb(d.color).darker(2))
+            // Add hover text
+            .append("title")
+              .text(function(d) { return d.name + "\n" + d.value + " applications"; });
+
+          // add in the title for the nodes
+            node
+              .append("text")
+                .attr("x", -6)
+                .attr("y", function(d) { return d.dy / 2; })
+                .attr("dy", ".35em")
+                .attr("text-anchor", "end")
+                .attr("transform", null)
+                .text(d => d.name)
+              .filter(d => d.x < width / 2)
+                .attr("x", 6 + sankey.nodeWidth())
+                .attr("text-anchor", "start");
+
+          // the function for moving the nodes
+          function dragmove(d) {
+            d3.select(this)
+              .attr("transform",
+                    "translate("
+                      + d.x + ","
+                      + (d.y = Math.max(
+                          0, Math.min(height - d.dy, d3.event.y))
+                        ) + ")");
+            sankey.relayout();
+            link.attr("d", sankey.link() );
+          }
+
+        });
+      </script>
+  </body>
+</html>

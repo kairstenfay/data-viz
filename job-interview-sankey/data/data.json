@@ -1,0 +1,136 @@
+{
+    "nodes": [
+        {
+            "node": 0,
+            "name": "Applied"
+        },
+        {
+            "node": 1,
+            "name": "Rejected"
+        },
+        {
+            "node": 2,
+            "name": "Initial screen"
+        },
+        {
+            "node": 3,
+            "name": "Technical screen"
+        },
+        {
+            "node": 4,
+            "name": "Virtual on-site"
+        },
+        {
+            "node": 5,
+            "name": "Offer"
+        },
+        {
+            "node": 6,
+            "name": "Withdrew after offer"
+        },
+        {
+            "node": 7,
+            "name": "Rejected"
+        },
+        {
+            "node": 8,
+            "name": "Ghosted"
+        },
+        {
+            "node": 9,
+            "name": "Withdrew before onsite"
+        },
+        {
+            "node": 10,
+            "name": "Withdrew before screen"
+        },
+        {
+            "node": 11,
+            "name": "No response"
+        },
+        {
+            "node": 12,
+            "name": "Rejected"
+        },
+        {
+            "node": 13,
+            "name": "Accepted"
+        },
+        {
+            "node": 14,
+            "name": "Ghosted"
+        }
+    ],
+    "links": [
+        {
+            "source": 0,
+            "target": 2,
+            "value": 14
+        },
+        {
+            "source": 0,
+            "target": 1,
+            "value": 4
+        },
+        {
+            "source": 0,
+            "target": 11,
+            "value": 14
+        },
+        {
+            "source": 2,
+            "target": 3,
+            "value": 12
+        },
+        {
+            "source": 2,
+            "target": 8,
+            "value": 2
+        },
+        {
+            "source": 3,
+            "target": 4,
+            "value": 6
+        },
+        {
+            "source": 3,
+            "target": 12,
+            "value": 3
+        },
+        {
+            "source": 3,
+            "target": 14,
+            "value": 1
+        },
+        {
+            "source": 4,
+            "target": 5,
+            "value": 3
+        },
+        {
+            "source": 4,
+            "target": 7,
+            "value": 1
+        },
+        {
+            "source": 3,
+            "target": 10,
+            "value": 2
+        },
+        {
+            "source": 4,
+            "target": 9,
+            "value": 2
+        },
+        {
+            "source": 5,
+            "target": 13,
+            "value": 1
+        },
+        {
+            "source": 5,
+            "target": 6,
+            "value": 2
+        }
+    ]
+}
